@@ -1,0 +1,12 @@
+data/output/
+.env
+
+# temp files of excel, ppt etc.
+~$*
+
+__pycache__/
+*.py[cod]
+
+config.json
+
+log/
