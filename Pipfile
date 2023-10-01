@@ -13,6 +13,7 @@ spacy = "*"
 numpy = "*"
 openai = "*"
 lemminflect = "*"
+unimorph = "*"
 
 [dev-packages]
 

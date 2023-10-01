@@ -29,6 +29,13 @@ def test_single_word():
     # w = 'availability'
     # w = 'account'
     # w = 'constitute'
+    w = 'area'
+    w = 'formula'
+    w = 'distribute'
+    w = 'economy'
+    w = 'indicate'
+    w = 'finance'
+    w = 'sector'
     tag_to_words = get_all_inflections(w)
     pprint(tag_to_words)
     # get_all_inflections_2(w)
@@ -113,8 +120,8 @@ def test_reliability():
 
 if __name__ == '__main__':
     # test1()
-    # test_single_word()
+    test_single_word()
     # test_several_words()
-    test_tags_awl()
+    # test_tags_awl()
     # test_reliability()
     

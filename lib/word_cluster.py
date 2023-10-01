@@ -1,23 +1,13 @@
 from functools import reduce
 import random
 from typing import List, Optional
-from lemminflect import getAllInflections
+from lib.inflections import get_inflections
+from lib.utils import ExtendableDict
 
 import logging
 logger = logging.getLogger(__name__)
 
 
-class ExtendableDict(dict):
-    def extend(self, key, value: set):
-        if key not in self.keys():
-            self[key] = set()
-        self[key].update(value)
-    
-    def merge(self, other: dict):
-        for key, value in other.items():
-            if key not in self.keys():
-                self[key] = set()
-            self[key].update(value)
 
 
 class MyWord:
@@ -51,6 +41,7 @@ class WordFamily:
         self.tag_to_words = None
         self.all_words = set()
         # self.headword = headword
+        self.inflection_log = []
         self.construct(headword=headword, related_words=related_words)
         
     def __repr__(self) -> str:
@@ -58,11 +49,16 @@ class WordFamily:
     
     def construct(self, headword, related_words):
         self.tag_to_words = ExtendableDict()
+        self.inflection_log = []
         words = [headword]
         if related_words:
             words += related_words
         for i, word_surface in enumerate(words):
-            self.tag_to_words.merge(self.get_all_inflections(word_surface))
+            tag_to_surface, full_log = get_inflections(word_surface)
+            tag_to_words = {tag: set([MyWord(w, tag) for w in words]) for tag, words in tag_to_surface.items()}
+            
+            self.inflection_log.extend(full_log)
+            self.tag_to_words.merge(tag_to_words)
             if i == 0:
                 self.headword = next(filter(lambda w: w.surface==word_surface, 
                             [w for tmp_words in self.tag_to_words.values() for w in tmp_words]), "")
@@ -88,28 +84,6 @@ class WordFamily:
     @property
     def tags(self):
         return self.tag_to_words.keys()
-
-    @staticmethod
-    def get_all_inflections(word):
-        """get all inflections of a word, return a map from tag to a set of inflections
-
-        Args:
-            word (str): an English word
-
-        Returns:
-            dict: a mapping from tag to a set of MyWord, e.g. 
-                {'NN': {'account'},
-                'NNS': {'accounts'},
-                'VB': {'account'},
-                'VBD': {'accounted'},
-                ...}
-        """
-        res = getAllInflections(word)
-        if not res:
-            logger.warning(f"No inflections found for word: <{word}>")
-        # convert the tuple into a set
-        tag_to_words = {tag: set([MyWord(w, tag) for w in words]) for tag, words in res.items()}
-        return tag_to_words
     
     def print(self):
         print("headword: <{}>\n{}".format(self.headword, self.tag_to_words))
@@ -119,9 +93,11 @@ class WordCluster:
     def __init__(self) -> None:
         self.tag_to_words = ExtendableDict()
         self.word_family_list = []
+        self.inflection_log = []
     
     def add_item(self, headword, related_words=[]):
         wf = WordFamily(headword, related_words)
+        self.inflection_log.extend(wf.inflection_log)
         self.tag_to_words.merge(wf.tag_to_words)
         self.word_family_list.append(wf)
     

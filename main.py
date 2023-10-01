@@ -16,8 +16,15 @@ def main():
     sublist = 1
     fn_data = f'./data/output/{now}-AWL-sublist-{sublist}-cloze.xlsx'
     fn_log = f'./log/excel/{now}-log.xlsx'
+    fn_inflections = f'./log/excel/{now}-inflections.xlsx'
+    inflection_columns = ['word', 'tag', 'lemm', 'unimorph']
 
+    logger.info(f"Loading data from {path}...")
     word_cluster = load_sublist(path, sublist=sublist)
+    df_inflections = pd.DataFrame(word_cluster.inflection_log, columns=inflection_columns)
+    write_data(df_inflections, fn_inflections)
+    logger.info(f"Inflections saved to {fn_inflections}")
+    
     words = select_keywords(word_cluster, start=KEYWORD_START_POS, max_count=KEYWORD_COUNT)
     n_total = len(words)
     logger.info(f"Start generating cloze sentences for {n_total} words...")

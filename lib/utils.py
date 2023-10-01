@@ -7,6 +7,19 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+class ExtendableDict(dict):
+    def extend(self, key, value: set):
+        if key not in self.keys():
+            self[key] = set()
+        self[key].update(value)
+    
+    def merge(self, other: dict):
+        for key, value in other.items():
+            if key not in self.keys():
+                self[key] = set()
+            self[key].update(value)
+            
+
 def setup_log(level=None, log_path='./log/txt'):
     if not level:
         level = logging.getLevelName(DEFAULT_LOG_LEVEL)
