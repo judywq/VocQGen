@@ -144,10 +144,15 @@ class SentGenParser(ParserBase):
         max_words = inputs.get('max_words', 20)
         delimiter = self.inputs.get('delimiter', 'a backtick')
         
+        jj_requirement = ''
+        if tag == 'JJ':
+            jj_requirement = 'The word should be followed by a noun. '
+        
         prompt = f'''Generate a sentence with the word "{word}" \
 with at most {max_words} words. \
 The text domain should be {domain}. \
 The given word in the sentence has a pos tag of {tag}. \
+{jj_requirement}\
 It should not be at the beginning of the sentence. \
 It should not appear more than once. \
 Surround it with {delimiter}.
