@@ -17,7 +17,7 @@ def main():
     fn_data = f'./data/output/{now}-AWL-sublist-{sublist}-cloze.xlsx'
     fn_log = f'./log/excel/{now}-log.xlsx'
     fn_inflections = f'./log/excel/{now}-inflections.xlsx'
-    inflection_columns = ['word', 'tag', 'lemm', 'unimorph']
+    inflection_columns = ['word', 'tag', 'lemm', 'unimorph', 'final']
 
     logger.info(f"Loading data from {path}...")
     word_cluster = load_sublist(path, sublist=sublist)
@@ -110,6 +110,7 @@ def load_sublist(path, sublist=1, max_count=-1):
     wc = WordCluster()
     for i, row in df.iterrows():
         headword = row['Headword']
+        logger.info(f"Processing word family for '{headword}'...")
         # related_words = row['Related word forms'].split(',')
         # Do not derive for now
         related_words = []
