@@ -1,7 +1,7 @@
 import pandas as pd
 from lib.chat import MyBotWrapper
 from lib.parser import SentGenParser, DerivativeParser, RationalParser, PosCheckParser
-from lib.utils import fill_cloze, get_date_str, setup_log, setup_randomness
+from lib.utils import fill_cloze, get_date_str, read_from_cache, write_to_cache, setup_log, setup_randomness
 from lib.io import read_data, write_data
 from lib.word_cluster import WordCluster
 from setting import DISTRACTOR_COUNT, KEYWORD_START_POS, TEST_DISTRACTOR_COUNT, KEYWORD_COUNT, RETRY_COUNT_FOR_SINGLE_WORD
@@ -19,8 +19,15 @@ def main():
     fn_inflections = f'./log/excel/{now}-inflections.xlsx'
     inflection_columns = ['word', 'tag', 'lemm', 'unimorph', 'final']
 
-    logger.info(f"Loading data from {path}...")
-    word_cluster = load_sublist(path, sublist=sublist)
+    logger.info(f"Try loading from cache...")
+    word_cluster = read_from_cache(path, sublist)
+    if not word_cluster:
+        logger.info(f"WordCluster cache not found, load...")
+        word_cluster = load_sublist(path, sublist=sublist)
+        write_to_cache(path, sublist, word_cluster)
+        logger.info(f"WordCluster written to cache")
+    else:
+        logger.info(f"WordCluster loaded from cache: {path}")
     df_inflections = pd.DataFrame(word_cluster.inflection_log, columns=inflection_columns)
     write_data(df_inflections, fn_inflections)
     logger.info(f"Inflections saved to {fn_inflections}")

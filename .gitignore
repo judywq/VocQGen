@@ -10,5 +10,6 @@ __pycache__/
 config.json
 
 log/
+cache/
 
 .DS_Store

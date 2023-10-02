@@ -1,6 +1,7 @@
 import datetime
 import json
 import os
+import pickle
 from setting import DEFAULT_LOG_LEVEL, RANDOM_SEED
 
 import logging
@@ -52,6 +53,27 @@ def fill_cloze(sentence, word):
     """Fill the blank in the sentence with the word
     """
     return sentence.replace('_' * 4, word)
+
+
+cache_dir = './cache'
+def get_cache_path(path, sublist):
+    head, tail = os.path.split(path)
+    fn = os.path.join(cache_dir, f"{tail}.sublist{sublist}.cache")
+    return fn
+    
+def read_from_cache(path, sublist):
+    fn = get_cache_path(path, sublist)
+    if not os.path.exists(fn):
+        return None
+    with(open(fn, 'rb')) as f:
+        return pickle.load(f)
+
+def write_to_cache(path, sublist, obj):
+    if not os.path.exists(cache_dir):
+        os.makedirs(cache_dir)
+    fn = get_cache_path(path, sublist)
+    with(open(fn, 'wb')) as f:
+        pickle.dump(obj, f)
 
 
 def get_date_str():
