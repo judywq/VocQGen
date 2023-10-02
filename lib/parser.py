@@ -218,19 +218,18 @@ class PosCheckParser(ParserBase):
     def compose_prompt(self, inputs):
         super().compose_prompt(inputs=inputs)
         word = inputs.get('word')
-        tag = inputs.get('tag')
         sentence = inputs.get('sentence')
         
-        prompt = f'''Check whether the word "{word}" \
-has a pos tag of {tag} in the following sentence: \
-"{sentence}".
-Reply with true or false.
+        prompt = f'''What is the POS tag of the word "{word}" \
+in the following sentence. Reply with the POS tag only.
+---
+{sentence}
 '''
         return prompt
     
     def parse_response(self, prompt, response):
         res = super().parse_response(prompt=prompt, response=response)
-        result = "true" in response.lower()
+        result = self.inputs.get('tag').lower() == response.lower()
         return {
             **res,
             "success": result,
