@@ -41,9 +41,23 @@ def setup_log(level=None, log_path='./log/txt'):
     logging.basicConfig(level=logging.DEBUG,
                         handlers=[file_handler, console_handler])
 
+
+def cloze_sentence(sentence, word):
+    """Replace the word in the sentence with a blank (4 underscores)
+    """
+    return sentence.replace(word, '_' * 4)
+
+
+def fill_cloze(sentence, word):
+    """Fill the blank in the sentence with the word
+    """
+    return sentence.replace('_' * 4, word)
+
+
 def get_date_str():
     now = datetime.datetime.now()
     return now.strftime("%Y-%m-%d_%H-%M-%S")
+
 
 def setup_randomness():
     if RANDOM_SEED > 0:

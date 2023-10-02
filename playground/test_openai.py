@@ -21,9 +21,9 @@ from lib.utils import load_config, setup_log
 from lib.chat import MyBotWrapper
 from lib.parser import *
 
-config = load_config()
+# config = load_config()
 
-openai.api_key = config['api_key']
+# openai.api_key = config['api_key']
 model = 'gpt-3.5-turbo-0301'
 model = 'gpt-3.5-turbo'
 
@@ -71,9 +71,18 @@ def test_sentence_generation():
     # inputs={"word": "account", "tag": "VBZ"}
     # inputs={"word": "constitute", "tag": "VBD"}
     # inputs={"word": "account", "tag": "NN"}
-    inputs={"word": "approaches", "tag": "VBZ"}
+    inputs={"word": "period", "tag": "JJ"}
     res = bot.run(inputs=inputs)
-
+    print(res)
+    
+    
+def test_pos_check():
+    parser = PosCheckParser()
+    bot = MyBotWrapper(parser=parser, model=model, temperature=0.1)
+    # inputs={"word": "period", "tag": "JJ", "sentence": "The period of the study is 3 years."}
+    inputs={"word": "period", "tag": "NN", "sentence": "The period of the study is 3 years."}
+    res = bot.run(inputs=inputs)
+    print(res)
 
 
 def test_derivatives():
@@ -157,13 +166,47 @@ Answer in the following JSON structure:
     test_with('syntax')
     test_with('grammar')
 
+
+def test_generate_text():
+    inputs = {
+        "word": "economy",
+        "tag": "JJ",
+    }
+    word = inputs.get('word')
+    tag = inputs.get('tag', 'any')
+    domain = inputs.get('domain', 'Academic English')
+    max_words = inputs.get('max_words', 20)
+    delimiter = inputs.get('delimiter', 'a backtick')
+    
+    jj_requirement = ''
+    if tag == 'JJ':
+        jj_requirement = 'The word should be followed by a noun. '
+    
+    prompt = f'''Generate a sentence with the word "{word}" \
+with at most {max_words} words. \
+The text domain should be {domain}. \
+The given word in the sentence has a pos tag of {tag}. \
+{jj_requirement}\
+It should not be at the beginning of the sentence. \
+It should not appear more than once. \
+Surround it with {delimiter}.
+---
+For example, the given word is "account" with pos tag of "NN". \
+You should yield a sentence in the following format:
+I have an `account` with the bank.
+'''    
+    print(prompt)
+
+
 if __name__ == '__main__':
     setup_log()
-    test_hello()
+    # test_hello()
     # test_summarize()
     # test_sentence_generation()
+    test_pos_check()
     # test_derivatives()
     # test_rational()
     # test_rational_more()
     # test_compare_grammar_syntax()
+    # test_generate_text()
     

@@ -1,10 +1,10 @@
 import pandas as pd
 from lib.chat import MyBotWrapper
-from lib.parser import SentGenParser, DerivativeParser, RationalParser
-from lib.utils import get_date_str, setup_log, setup_randomness
+from lib.parser import SentGenParser, DerivativeParser, RationalParser, PosCheckParser
+from lib.utils import fill_cloze, get_date_str, setup_log, setup_randomness
 from lib.io import read_data, write_data
 from lib.word_cluster import WordCluster
-from setting import DISTRACTOR_COUNT, KEYWORD_START_POS, TEST_DISTRACTOR_COUNT, KEYWORD_COUNT
+from setting import DISTRACTOR_COUNT, KEYWORD_START_POS, TEST_DISTRACTOR_COUNT, KEYWORD_COUNT, RETRY_COUNT_FOR_SINGLE_WORD
 
 import logging
 logger = logging.getLogger(__name__)
@@ -31,6 +31,7 @@ def main():
 
     bot_sent_gen = MyBotWrapper(parser=SentGenParser(), temperature=0.9)
     # bot_derive = MyBotWrapper(parser=DerivativeParser(), temperature=0.1)
+    bot_pos_check = MyBotWrapper(parser=PosCheckParser(), temperature=0.1)
     bot_rational = MyBotWrapper(parser=RationalParser(), temperature=0)
 
     log_columns = ['Date', 'Task', 'Keyword', 'Tag', 'Prompt', 'Raw Response', 'Parsed Result', 'Success']
@@ -42,21 +43,34 @@ def main():
         
         keyword = word.surface
         keyword_tag = word.tag
-        # print(f"{repr(w)}: {candidates}")
-        r = bot_sent_gen.run(inputs={"word": keyword, "tag": keyword_tag})
-        suc = r.get('success')
-        log_data.append([get_date_str(), bot_sent_gen.task_name, word.surface, word.tag, r.get('prompt'), r.get('raw_response'), r.get('result'), suc])
+        
+        clozed_sentence = None
+        for trial in range(RETRY_COUNT_FOR_SINGLE_WORD):
+            # print(f"{repr(w)}: {candidates}")
+            r = bot_sent_gen.run(inputs={"word": keyword, "tag": keyword_tag})
+            suc = r.get('success')
+            log_data.append([get_date_str(), bot_sent_gen.task_name, word.surface, word.tag, r.get('prompt'), r.get('raw_response'), r.get('result'), suc])
+            
+            if suc:
+                clozed_sentence = r.get('result')
+                sentence = fill_cloze(clozed_sentence, keyword)
+                r = bot_pos_check.run(inputs={"word": keyword, "tag": keyword_tag, "sentence": sentence})
+                suc = r.get('success')
+                log_data.append([get_date_str(), bot_pos_check.task_name, word.surface, word.tag, r.get('prompt'), r.get('raw_response'), r.get('result'), suc])
+            
+            if suc:
+                break
+            
         if not suc:
             logger.error(f"Failed to generate sentence for '{keyword}'")
             continue
-        sentence = r.get('result')
         
-        distractors = fill_distractors(bot_rational, word_cluster, word, sentence, log_data=log_data)
+        distractors = fill_distractors(bot_rational, word_cluster, word, clozed_sentence, log_data=log_data)
         
-        data.append([sentence, keyword, *distractors])
+        data.append([clozed_sentence, keyword, *distractors])
 
         msg = "\n".join([f"{i+1}/{n_total}: " + "-" * 80,
-                f"Sentence: {sentence}",
+                f"Sentence: {clozed_sentence}",
                 f"Keyword: {keyword}",
                 "Distractors: " + ", ".join(distractors),])
         logger.info(msg)

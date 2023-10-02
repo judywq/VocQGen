@@ -1,8 +1,9 @@
 import json
-import logging
-import re
+from lib.utils import cloze_sentence
 
+import logging
 logger = logging.getLogger(__name__)
+
 
 class ParserBase():
     """Parser is a class that is responsible for generating prompt and 
@@ -61,8 +62,15 @@ class ParserBase():
         return False
     
     @staticmethod
-    def remove_surrounding_quotes(text):
-        # Remove surrounding quotes
+    def remove_surrounding_quotes(text:str) -> str:
+        """Remove surrounding quotes from a string
+
+        Args:
+            text (str): string possibly with surrounding quotes
+
+        Returns:
+            str: string without surrounding quotes
+        """
         if text.startswith('"'):
             text = text[1:]
         if text.endswith('"'):
@@ -155,11 +163,10 @@ The given word in the sentence has a pos tag of {tag}. \
 {jj_requirement}\
 It should not be at the beginning of the sentence. \
 It should not appear more than once. \
-Surround it with {delimiter}.
----
 For example, the given word is "account" with pos tag of "NN". \
 You should yield a sentence in the following format:
-I have an `account` with the bank.
+---
+I have an account with the bank.
 '''
         return prompt
 
@@ -167,8 +174,23 @@ I have an `account` with the bank.
         res = super().parse_response(prompt=prompt, response=response)
         response = self.remove_surrounding_quotes(response)
         
-        # use regex to replace multiple underscores with 4 underscores
-        result = re.sub(r"`\w+`", "_"*4, response)
+        word = self.inputs.get('word')
+        
+        if word not in response:
+            logger.error(f"Keyword '{word}' not found in response: {response}")
+            return {
+                **res,
+                "success": False,
+            }
+        
+        if response.startswith(word):
+            logger.error(f"Keyword '{word}' found at the beginning of the sentence: {response}")
+            return {
+                **res,
+                "success": False,
+            }
+        
+        result = cloze_sentence(response, word)
         
         return {
             **res,
@@ -181,6 +203,37 @@ I have an `account` with the bank.
             "result": "I have an ____ with the bank.", 
             "word": "account", 
             "tag": "NN",
+        }
+
+
+class PosCheckParser(ParserBase):
+    """Check whether a word has a given pos tag in a sentence
+
+    inputs = {"word": "account", "tag": "NN", "sentence": "I have an account with the bank."}
+    
+    return {"success": True, "word": "account", "tag": "NN", "sentence": "I have an account with the bank."}
+    """
+    task_name = "POS Check"
+    
+    def compose_prompt(self, inputs):
+        super().compose_prompt(inputs=inputs)
+        word = inputs.get('word')
+        tag = inputs.get('tag')
+        sentence = inputs.get('sentence')
+        
+        prompt = f'''Check whether the word "{word}" \
+has a pos tag of {tag} in the following sentence: \
+"{sentence}".
+Reply with true or false.
+'''
+        return prompt
+    
+    def parse_response(self, prompt, response):
+        res = super().parse_response(prompt=prompt, response=response)
+        result = "true" in response.lower()
+        return {
+            **res,
+            "success": result,
         }
 
 
