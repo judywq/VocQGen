@@ -154,18 +154,16 @@ class SentGenParser(ParserBase):
         
         jj_requirement = ''
         if tag == 'JJ':
-            jj_requirement = 'The word should be followed by a noun. '
+            jj_requirement = f'- Ensure "{word}" be followed by a noun. '
         
-        prompt = f'''Generate a sentence with the word "{word}" \
-with at most {max_words} words. \
-The text domain should be {domain}. \
-The given word in the sentence has a pos tag of {tag}. \
+        prompt = f'''Create a sentence in the domain of {domain} that meets the following criteria:
+- The sentence should contain the word "{word}" tagged as "{tag}".
+- The length of the sentence should be between 20 to 30 words.
+- Ensure "{word}" is not used at the beginning of the sentence or repeated elsewhere in the sentence.
 {jj_requirement}\
-It should not be at the beginning of the sentence. \
-It should not appear more than once. \
-For example, the given word is "account" with pos tag of "NN". \
-You should yield a sentence in the following format:
----
+- Preferably, do not start the sentence with the word "the".
+To give you a clearer idea, consider this example: If the provided word was "account" tagged as "NN" (noun),\
+an appropriate sentence would be:
 I have an account with the bank.
 '''
         return prompt
