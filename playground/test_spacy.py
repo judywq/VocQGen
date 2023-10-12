@@ -1,5 +1,8 @@
 import spacy
 
+# Run this command first:
+# pipenv shell
+# python -m spacy download en_core_web_sm
 nlp = spacy.load("en_core_web_sm")
 
 def print_all_tags():
@@ -36,6 +39,8 @@ def print_spacy_tags():
     doc = nlp("Get busy living or get busy dying.")
     doc = nlp("approachable")
     doc = nlp("Put it back!")
+    # The VBN can be detected correctly:
+    doc = nlp("The data from the research was meticulously analysed to draw precise conclusions.")
 
     print(f"{'text':{8}} {'lemma':{8}} {'POS':{6}} {'TAG':{6}} {'Dep':{6}} {'POS explained':{20}} {'tag explained'} ")
     for token in doc:

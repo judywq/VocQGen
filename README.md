@@ -5,6 +5,9 @@ Set `OPENAI_API_KEY` environment variable.
 ``` sh
 pipenv install
 pipenv shell
+
+python -m spacy download en_core_web_sm # <-- First time only
+
 python main.py
 ```
 

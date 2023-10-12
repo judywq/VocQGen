@@ -1,9 +1,10 @@
 import pandas as pd
 from lib.chat import MyBotWrapper
-from lib.parser import SentGenParser, DerivativeParser, RationalParser, PosCheckParser
+from lib.parser import SentGenParser, DerivativeParser, RationalParser
 from lib.utils import fill_cloze, get_date_str, read_from_cache, write_to_cache, setup_log, setup_randomness
 from lib.io import read_data, write_data
 from lib.word_cluster import WordCluster
+from lib.nlp_helper import pos_check
 from setting import DISTRACTOR_COUNT, KEYWORD_START_POS, TEST_DISTRACTOR_COUNT, KEYWORD_COUNT, RETRY_COUNT_FOR_SINGLE_WORD
 
 import logging
@@ -38,7 +39,6 @@ def main():
 
     bot_sent_gen = MyBotWrapper(parser=SentGenParser(), temperature=0.9)
     # bot_derive = MyBotWrapper(parser=DerivativeParser(), temperature=0.1)
-    bot_pos_check = MyBotWrapper(parser=PosCheckParser(), temperature=0.1)
     bot_rational = MyBotWrapper(parser=RationalParser(), temperature=0)
 
     log_columns = ['Date', 'Task', 'Keyword', 'Tag', 'Prompt', 'Raw Response', 'Parsed Result', 'Success']
@@ -56,14 +56,14 @@ def main():
             # print(f"{repr(w)}: {candidates}")
             r = bot_sent_gen.run(inputs={"word": keyword, "tag": keyword_tag})
             suc = r.get('success')
-            log_data.append([get_date_str(), bot_sent_gen.task_name, word.surface, word.tag, r.get('prompt'), r.get('raw_response'), r.get('result'), suc])
+            log_data.append([get_date_str(), bot_sent_gen.task_name, keyword, keyword_tag, r.get('prompt'), r.get('raw_response'), r.get('result'), suc])
             
             if suc:
                 clozed_sentence = r.get('result')
                 sentence = fill_cloze(clozed_sentence, keyword)
-                r = bot_pos_check.run(inputs={"word": keyword, "tag": keyword_tag, "sentence": sentence})
-                suc = r.get('success')
-                log_data.append([get_date_str(), bot_pos_check.task_name, word.surface, word.tag, r.get('prompt'), r.get('raw_response'), r.get('result'), suc])
+
+                suc = pos_check(inputs={"word": keyword, "tag": keyword_tag, "sentence": sentence})
+                log_data.append([get_date_str(), "POS Check", keyword, keyword_tag, "-", "-", "-", suc])
             
             if suc:
                 break
