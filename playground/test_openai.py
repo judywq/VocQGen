@@ -26,6 +26,7 @@ from lib.parser import *
 # openai.api_key = config['api_key']
 model = 'gpt-3.5-turbo-0301'
 model = 'gpt-3.5-turbo'
+model = 'gpt-4'
 
 def get_completion(prompt, model="gpt-3.5-turbo"):
     messages = [{"role": "user", "content": prompt}]
@@ -71,9 +72,11 @@ def test_sentence_generation():
     # inputs={"word": "account", "tag": "VBZ"}
     # inputs={"word": "constitute", "tag": "VBD"}
     # inputs={"word": "account", "tag": "NN"}
-    inputs={"word": "period", "tag": "JJ"}
+    # inputs={"word": "period", "tag": "JJ"}
+    inputs={"word": "analysed", "tag": "VBD"}
     res = bot.run(inputs=inputs)
     print(res)
+    print(res['raw_response'])
     
     
 def test_pos_check():
@@ -182,28 +185,23 @@ def test_generate_text():
     if tag == 'JJ':
         jj_requirement = 'The word should be followed by a noun. '
     
-    prompt = f'''Generate a sentence with the word "{word}" \
-with at most {max_words} words. \
-The text domain should be {domain}. \
-The given word in the sentence has a pos tag of {tag}. \
-{jj_requirement}\
-It should not be at the beginning of the sentence. \
-It should not appear more than once. \
-Surround it with {delimiter}.
----
-For example, the given word is "account" with pos tag of "NN". \
-You should yield a sentence in the following format:
-I have an `account` with the bank.
+    prompt = f'''Create a sentence in the domain of {domain} that meets the following criteria:
+The sentence should contain the word "{word}" tagged as "{tag}".
+The length of the sentence should be between 20 to 30 words.
+Ensure "{word}" is not used at the beginning of the sentence or repeated elsewhere in the sentence.
+Preferably, do not start the sentence with the word "the".
+To give you a clearer idea, consider this example: If the provided word was "account" tagged as "NN" (noun), an appropriate sentence would be:
+"I have an account with the bank."
 '''    
     print(prompt)
 
 
 if __name__ == '__main__':
-    setup_log()
+    setup_log(need_file=False)
     # test_hello()
     # test_summarize()
-    # test_sentence_generation()
-    test_pos_check()
+    test_sentence_generation()
+    # test_pos_check()
     # test_derivatives()
     # test_rational()
     # test_rational_more()
