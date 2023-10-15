@@ -156,14 +156,13 @@ class SentGenParser(ParserBase):
         if tag == 'JJ':
             jj_requirement = f'- Ensure "{word}" be followed by a noun. '
         
-        prompt = f'''Create a sentence in the domain of {domain} that meets the following criteria:
-- The sentence should contain the word "{word}" tagged as "{tag}".
-- The length of the sentence should be between 20 to 30 words.
-- Ensure "{word}" is not used at the beginning of the sentence or repeated elsewhere in the sentence.
-{jj_requirement}\
-- Preferably, do not start the sentence with the word "the".
-To give you a clearer idea, consider this example: If the provided word was "account" tagged as "NN" (noun),\
-an appropriate sentence would be:
+        prompt = f'''You are an English teacher at a Japanese university and you are creating question stems for vocabulary multiple-choice cloze questions for your students. Now please generate a sentence in the domain of Academic English that meets the following criteria:
+The sentence should contain the word "{word}" tagged as "{tag}". 
+The word "{word}" should be pivotal to the meaning of the sentence and carries significant weight in the context.
+The length of the sentence should be between 20-25 words.
+Ensure "{word}" is not used at the beginning of the sentence or repeated elsewhere in the sentence.
+Please avoid starting the sentence with the definite article.
+To give you a clearer idea, consider this example: If the provided word was "account" tagged as "NN" (noun), an appropriate sentence would be:
 I have an account with the bank.
 '''
         return prompt
@@ -175,14 +174,14 @@ I have an account with the bank.
         word = self.inputs.get('word')
         
         if word not in response:
-            logger.error(f"Keyword '{word}' not found in response: {response}")
+            logger.warning(f"Keyword '{word}' not found in response: {response}")
             return {
                 **res,
                 "success": False,
             }
         
         if response.startswith(word):
-            logger.error(f"Keyword '{word}' found at the beginning of the sentence: {response}")
+            logger.warning(f"Keyword '{word}' found at the beginning of the sentence: {response}")
             return {
                 **res,
                 "success": False,
@@ -281,27 +280,21 @@ class RationalParser(ParserBase):
         words_with_comma = ", ".join(set(str(w) for w in candidates))
         sentence = inputs.get('sentence')
         
-        prompt = f'''In this multiple choice cloze question stem: "{sentence}" The key is "{keyword}".\
-A list of possible distractors include "{words_with_comma}". Please provide feedback in terms of \
-"syntactic appropriateness" and "contextual/semantic appropriateness" of the distractors in the completed sentences. \
+        prompt = f'''You are an English teacher at a Japanese university and you are creating distractors for vocabulary multiple-choice cloze questions for your students. 
+In this multiple choice cloze question stem: "{sentence}" 
+A list of possible distractors include "{words_with_comma}". 
+Please provide feedback in terms of syntactic appropriateness and contextual/semantic sense-making of the distractors in the completed sentences. 
 Return only the following result in JSON format to me:
 {{
   "distractor 1": {{"syntax": true, "semantics": true}},
   "distractor 2": {{"syntax": true, "semantics": false}}
 }}
 
-To provide you with an example, the question stem is "Birds _____ in the sky." The key is "fly". \
-The list of distractors include "swim, beat". The distractor "swim" is syntactically valid because \
-there will be no grammar errors when it is filled into the blank, but it's contextually inappropriate \
-since birds "fly" in the sky, not "swim". The distractor "beat" is syntactically invalid because "beat" \
-is a transitive verb and requires an object after it. There will be  grammar errors when it is filled into the blank. \
-It's contextually/semantically inappropriate because the sentence does not make much sense or is making less sense compared with the key. \
-Return only the following result in JSON format to me:
+To provide you with more instructions on judgement, consider the the question stem: "Birds _____ in the sky." The list of distractors include "swim, beat". The distractor "swim" is syntactically valid because there will be no grammar errors when it is filled into the blank, but it does not make sense since birds "fly" in the sky, not "swim". The distractor "beat" is syntactically inappropriate because "beat" is a transitive verb and requires an object after it. There will be  grammar errors when it is filled into the blank. It also does not make much sense or is incomprehensible. Return only the following result in JSON format to me:
 {{
   "swim": {{"syntax": true, "semantics": false}},
   "beat": {{"syntax": false, "semantics": false}}
 }}
-
 '''
 # Reply with json object only without any notes. 
 # while using correct articles and prepositions, \
