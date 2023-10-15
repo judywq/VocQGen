@@ -63,7 +63,7 @@ def main():
                 sentence = fill_cloze(clozed_sentence, keyword)
 
                 suc = pos_check(inputs={"word": keyword, "tag": keyword_tag, "sentence": sentence})
-                log_data.append([get_date_str(), "POS Check", keyword, keyword_tag, "-", "-", "-", suc])
+                log_data.append([get_date_str(), "POS Check", keyword, keyword_tag, f"Tag: {keyword_tag}, Sentence: {sentence}", "-", "-", suc])
             
             if suc:
                 break
