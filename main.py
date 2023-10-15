@@ -5,7 +5,7 @@ from lib.utils import fill_cloze, get_date_str, read_from_cache, write_to_cache,
 from lib.io import read_data, write_data
 from lib.word_cluster import WordCluster
 from lib.nlp_helper import pos_check
-from setting import DISTRACTOR_COUNT, KEYWORD_START_POS, TEST_DISTRACTOR_COUNT, KEYWORD_COUNT, RETRY_COUNT_FOR_SINGLE_WORD
+import setting
 
 import logging
 logger = logging.getLogger(__name__)
@@ -33,7 +33,7 @@ def main():
     write_data(df_inflections, fn_inflections)
     logger.info(f"Inflections saved to {fn_inflections}")
     
-    words = select_keywords(word_cluster, start=KEYWORD_START_POS, max_count=KEYWORD_COUNT)
+    words = select_keywords(word_cluster, start=setting.KEYWORD_START_POS, max_count=setting.KEYWORD_COUNT)
     n_total = len(words)
     logger.info(f"Start generating cloze sentences for {n_total} words...")
 
@@ -44,7 +44,7 @@ def main():
     log_columns = ['Date', 'Task', 'Keyword', 'Tag', 'Prompt', 'Raw Response', 'Parsed Result', 'Success']
     log_data = []
     
-    columns = ['Sentence', 'Correct Answer', *[f'Distractor {i}' for i in range(1, DISTRACTOR_COUNT+1)]]
+    columns = ['Sentence', 'Correct Answer', *[f'Distractor {i}' for i in range(1, setting.DISTRACTOR_COUNT+1)]]
     data = []
     for i, word in enumerate(words):
         
@@ -52,9 +52,9 @@ def main():
         keyword_tag = word.tag
         
         clozed_sentence = None
-        for trial in range(RETRY_COUNT_FOR_SINGLE_WORD):
+        for trial in range(setting.RETRY_COUNT_FOR_SINGLE_WORD):
             # print(f"{repr(w)}: {candidates}")
-            r = bot_sent_gen.run(inputs={"word": keyword, "tag": keyword_tag})
+            r = bot_sent_gen.run(inputs={"word": keyword, "tag": keyword_tag, "domain": setting.DOMAIN, "level_start": setting.LEVEL_START, "level_end": setting.LEVEL_END})
             suc = r.get('success')
             log_data.append([get_date_str(), bot_sent_gen.task_name, keyword, keyword_tag, r.get('prompt'), r.get('raw_response'), r.get('result'), suc])
             
@@ -72,9 +72,9 @@ def main():
             logger.error(f"Failed to generate sentence for '{keyword}'")
             continue
         
-        distractors = fill_distractors(bot_rational, word_cluster, word, clozed_sentence,n_distractors=TEST_DISTRACTOR_COUNT, log_data=log_data)
+        distractors = fill_distractors(bot_rational, word_cluster, word, clozed_sentence,n_distractors=setting.TEST_DISTRACTOR_COUNT, log_data=log_data)
         
-        if len(distractors) < DISTRACTOR_COUNT:
+        if len(distractors) < setting.DISTRACTOR_COUNT:
             logger.error(f"Failed to generate enough distractors for '{keyword}'")
         else:
             data.append([clozed_sentence, keyword, *distractors])
@@ -113,10 +113,10 @@ def fill_distractors(bot_rational, word_cluster, word, sentence, n_distractors, 
         # Make sure the distractors do not exceed the max count
         distractors += [str(w) for w in good_candidates]
         
-        if len(distractors) == DISTRACTOR_COUNT:
+        if len(distractors) == setting.DISTRACTOR_COUNT:
             break
-        elif len(distractors) > DISTRACTOR_COUNT:
-            distractors = distractors[:DISTRACTOR_COUNT]
+        elif len(distractors) > setting.DISTRACTOR_COUNT:
+            distractors = distractors[:setting.DISTRACTOR_COUNT]
             break
         else:
             logger.debug(f"Trial {i}: {len(distractors)} distractors collected in total.")

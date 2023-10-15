@@ -149,23 +149,21 @@ class SentGenParser(ParserBase):
         super().compose_prompt(inputs=inputs)
         word = inputs.get('word')
         tag = inputs.get('tag', 'any')
-        domain = inputs.get('domain', 'Academic English')
-        max_words = inputs.get('max_words', 20)
-        delimiter = self.inputs.get('delimiter', 'a backtick')
+        domain = inputs.get('domain', 'General Academic')
+        level_start = inputs.get('level_start', 'B1')
+        level_end = inputs.get('level_end', 'lower B2')
         
-        jj_requirement = ''
-        if tag == 'JJ':
-            jj_requirement = f'- Ensure "{word}" be followed by a noun. '
-        
-        prompt = f'''You are an English teacher at a Japanese university and you are creating question stems for vocabulary multiple-choice cloze questions for your students. Now please generate a sentence in the domain of Academic English that meets the following criteria:
-The sentence should contain the word "{word}" tagged as "{tag}". 
+        prompt = f'''You are an English teacher at a Japanese university and you are creating question stems for \
+vocabulary multiple-choice cloze questions for your students whose English proficiency levels range from {level_start} to {level_end} based on CEFR. 
+Now please generate a sentence in the domain of English for {domain} purposes that meets the following criteria:
+The sentence should contain the word "{word}" tagged as "{tag}".
 The word "{word}" should be pivotal to the meaning of the sentence and carries significant weight in the context.
 The length of the sentence should be between 20-25 words.
 Ensure "{word}" is not used at the beginning of the sentence or repeated elsewhere in the sentence.
 Please avoid starting the sentence with the definite article.
-To give you a clearer idea, consider this example: If the provided word was "account" tagged as "NN" (noun), an appropriate sentence would be:
-I have an account with the bank.
-'''
+
+To give you a clearer idea, consider this example: If the provided word was "account" tagged as "NN", an appropriate sentence would be:
+I have an account with the bank.'''
         return prompt
 
     def parse_response(self, prompt, response):

@@ -11,6 +11,9 @@ DEFAULT_MODEL = 'gpt-3.5-turbo-0301'
 DEFAULT_MODEL = 'gpt-3.5-turbo'
 DEFAULT_MODEL = 'gpt-4'
 
+DOMAIN = 'General Academic'
+LEVEL_START = 'B1'
+LEVEL_END = 'lower B2'
 # The number of times to retry when ChatGPT fails to generate a sentence for a word
 RETRY_COUNT_FOR_SINGLE_WORD = 2
 
