@@ -41,6 +41,8 @@ def print_spacy_tags():
     doc = nlp("Put it back!")
     # The VBN can be detected correctly:
     doc = nlp("The data from the research was meticulously analysed to draw precise conclusions.")
+    doc = nlp("The government's proposed policies aim to reduce income inequality and improve labour conditions for workers across industries.")
+    doc = nlp("The research project aims to examine the impact of technology adoption on productivity levels and labour efficiency in the manufacturing industry.")
 
     print(f"{'text':{8}} {'lemma':{8}} {'POS':{6}} {'TAG':{6}} {'Dep':{6}} {'POS explained':{20}} {'tag explained'} ")
     for token in doc:
