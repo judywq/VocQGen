@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 def main():
     now = get_date_str()
     path = 'data/input/AWL.xlsx'
-    sublist = 1
+    sublist = 2
     fn_data = f'./data/output/{now}-AWL-sublist-{sublist}-cloze.xlsx'
     fn_log = f'./log/excel/{now}-log.xlsx'
     fn_inflections = f'./log/excel/{now}-inflections.xlsx'
@@ -72,18 +72,19 @@ def main():
             logger.error(f"Failed to generate sentence for '{keyword}'")
             continue
         
-        distractors = fill_distractors(bot_rational, word_cluster, word, clozed_sentence, log_data=log_data)
+        distractors = fill_distractors(bot_rational, word_cluster, word, clozed_sentence,n_distractors=TEST_DISTRACTOR_COUNT, log_data=log_data)
         
-        data.append([clozed_sentence, keyword, *distractors])
-
-        msg = "\n".join([f"{i+1}/{n_total}: " + "-" * 80,
-                f"Sentence: {clozed_sentence}",
-                f"Keyword: {keyword}",
-                "Distractors: " + ", ".join(distractors),])
-        logger.info(msg)
-        
-        df = pd.DataFrame(data, columns=columns)
-        write_data(df, fn_data)
+        if len(distractors) < DISTRACTOR_COUNT:
+            logger.error(f"Failed to generate enough distractors for '{keyword}'")
+        else:
+            data.append([clozed_sentence, keyword, *distractors])
+            msg = "\n".join([f"{i+1}/{n_total}: " + "-" * 80,
+                    f"Sentence: {clozed_sentence}",
+                    f"Keyword: {keyword}",
+                    "Distractors: " + ", ".join(distractors),])
+            logger.info(msg)
+            df = pd.DataFrame(data, columns=columns)
+            write_data(df, fn_data)
 
         df_log = pd.DataFrame(log_data, columns=log_columns)
         write_data(df_log, fn_log)
@@ -91,11 +92,11 @@ def main():
     logger.info(f"Done. Data saved to {fn_data}")
 
 
-def fill_distractors(bot_rational, word_cluster, word, sentence, log_data=[], max_trials=5):
+def fill_distractors(bot_rational, word_cluster, word, sentence, n_distractors, log_data=[], max_trials=5):
     excepts = [word]
     distractors = []
     for i in range(max_trials):
-        candidates = word_cluster.find_distractors(word.tag, excepts=excepts, n=TEST_DISTRACTOR_COUNT)
+        candidates = word_cluster.find_distractors(word.tag, excepts=excepts, n=n_distractors)
         excepts += candidates
         
         if len(candidates) == 0:
