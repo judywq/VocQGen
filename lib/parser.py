@@ -1,4 +1,5 @@
 import json
+import re
 from lib.utils import cloze_sentence
 
 import logging
@@ -170,16 +171,15 @@ I have an account with the bank.
     def parse_response(self, prompt, response):
         res = super().parse_response(prompt=prompt, response=response)
         response = self.remove_surrounding_quotes(response)
-        
         word = self.inputs.get('word')
-        
-        if word not in response:
+        pat = re.compile(r'\b' + word + r'\b', re.IGNORECASE)
+        if not pat.search(response):
             logger.warning(f"Keyword '{word}' not found in response: {response}")
             return {
                 **res,
                 "success": False,
             }
-        
+
         if response.startswith(word):
             logger.warning(f"Keyword '{word}' found at the beginning of the sentence: {response}")
             return {
@@ -294,8 +294,7 @@ To provide you with more instructions on judgement, consider the the question st
 {{
   "swim": {{"syntax": true, "semantics": false}},
   "beat": {{"syntax": false, "semantics": false}}
-}}
-'''
+}}'''
 # Reply with json object only without any notes. 
 # while using correct articles and prepositions, \
 
