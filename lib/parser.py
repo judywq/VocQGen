@@ -276,22 +276,32 @@ class RationalParser(ParserBase):
     
     def compose_prompt(self, inputs):
         super().compose_prompt(inputs=inputs)
-        words = inputs.get('words')
-        words_with_comma = ", ".join(set(str(w) for w in words))
+        keyword = inputs.get('keyword')
+        candidates = inputs.get('candidates')
+        words_with_comma = ", ".join(set(str(w) for w in candidates))
         sentence = inputs.get('sentence')
         
-        prompt = f'''For each of the following words separated by a comma, \
-when the word is fit into the blank in the masked sentence, \
-if the syntax of the sentence is correct yield true for "syntax", \
-if the semantic meaning of the sentence is correct yield true for "semantics".
-Words: ```{words_with_comma}```
-Masked sentence: ```{sentence}```
----
-Answer in the following JSON structure:
+        prompt = f'''In this multiple choice cloze question stem: "{sentence}" The key is "{keyword}".\
+A list of possible distractors include "{words_with_comma}". Please provide feedback in terms of \
+"syntactic appropriateness" and "contextual/semantic appropriateness" of the distractors in the completed sentences. \
+Return only the following result in JSON format to me:
 {{
-  "word 1": {{"syntax": true, "semantics": true}},
-  "word 2": {{"syntax": true, "semantics": false}}
+  "distractor 1": {{"syntax": true, "semantics": true}},
+  "distractor 2": {{"syntax": true, "semantics": false}}
 }}
+
+To provide you with an example, the question stem is "Birds _____ in the sky." The key is "fly". \
+The list of distractors include "swim, beat". The distractor "swim" is syntactically valid because \
+there will be no grammar errors when it is filled into the blank, but it's contextually inappropriate \
+since birds "fly" in the sky, not "swim". The distractor "beat" is syntactically invalid because "beat" \
+is a transitive verb and requires an object after it. There will be  grammar errors when it is filled into the blank. \
+It's contextually/semantically inappropriate because the sentence does not make much sense or is making less sense compared with the key. \
+Return only the following result in JSON format to me:
+{{
+  "swim": {{"syntax": true, "semantics": false}},
+  "beat": {{"syntax": false, "semantics": false}}
+}}
+
 '''
 # Reply with json object only without any notes. 
 # while using correct articles and prepositions, \
@@ -304,15 +314,15 @@ Answer in the following JSON structure:
             obj = json.loads(response)
             others = []
             good_candidates = []
-            words = self.inputs['words']
+            candidates = self.inputs['candidates']
             for k, v in obj.items():
-                word = next(filter(lambda w: str(w) == k, words), "ERROR")
+                candidate = next(filter(lambda w: str(w) == k, candidates), "ERROR")
                 if v['syntax'] and not v['semantics']:
                     # the word is a good candidate as a distractor 
                     #   if it is syntactically correct but semantically wrong
-                    good_candidates.append(word)
+                    good_candidates.append(candidate)
                 else:
-                    others.append(word)
+                    others.append(candidate)
             return {
                 **res,
                 "result": obj,

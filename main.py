@@ -102,7 +102,7 @@ def fill_distractors(bot_rational, word_cluster, word, sentence, log_data=[], ma
             logger.warning(f"No more distractor candidates for '{word}'")
             break
         
-        r = bot_rational.run(inputs={"words": candidates, "sentence": sentence})
+        r = bot_rational.run(inputs={"keyword": word, "candidates": candidates, "sentence": sentence})
         suc = r.get('success')
         good_candidates = r.get('good_candidates')
         log_data.append([get_date_str(), bot_rational.task_name, word.surface, word.tag, r.get('prompt'), r.get('raw_response'), good_candidates, suc])
