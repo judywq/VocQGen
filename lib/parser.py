@@ -286,8 +286,8 @@ A list of possible distractors include "{words_with_comma}".
 Please provide feedback in terms of syntactic appropriateness and contextual/semantic sense-making of the distractors in the completed sentences. 
 Return only the following result in JSON format to me:
 {{
-  "distractor 1": {{"syntax": true, "semantics": true}},
-  "distractor 2": {{"syntax": true, "semantics": false}}
+  "word": {{"syntax": true, "semantics": true}},
+  "word": {{"syntax": true, "semantics": false}}
 }}
 
 To provide you with more instructions on judgement, consider the the question stem: "Birds _____ in the sky." The list of distractors include "swim, beat". The distractor "swim" is syntactically valid because there will be no grammar errors when it is filled into the blank, but it does not make sense since birds "fly" in the sky, not "swim". The distractor "beat" is syntactically inappropriate because "beat" is a transitive verb and requires an object after it. There will be  grammar errors when it is filled into the blank. It also does not make much sense or is incomprehensible. Return only the following result in JSON format to me:
@@ -308,7 +308,10 @@ To provide you with more instructions on judgement, consider the the question st
             good_candidates = []
             candidates = self.inputs['candidates']
             for k, v in obj.items():
-                candidate = next(filter(lambda w: str(w) == k, candidates), "ERROR")
+                candidate = next(filter(lambda w: str(w) == k, candidates), None)
+                if not candidate:
+                    logger.warning(f"Cannot find candidate '{k}' in response: {candidates}")
+                    continue
                 if v['syntax'] and not v['semantics']:
                     # the word is a good candidate as a distractor 
                     #   if it is syntactically correct but semantically wrong
