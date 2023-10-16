@@ -157,10 +157,12 @@ class SentGenParser(ParserBase):
 vocabulary multiple-choice cloze questions for your students whose English proficiency levels range from {level_start} to {level_end} based on CEFR. 
 Now please generate a sentence in the domain of English for {domain} purposes that meets the following criteria:
 The sentence should contain the word "{word}" tagged as "{tag}".
-The word "{word}" should be pivotal to the meaning of the sentence and carries significant weight in the context.
+The word "{word}" should be pivotal to the meaning of the sentence and carries significant weight in the context. 
+The sentence should show a high-frequency use of the word "{word}" tagged as "{tag}". 
 The length of the sentence should be between 20-25 words.
 Ensure "{word}" is not used at the beginning of the sentence or repeated elsewhere in the sentence.
-Please avoid starting the sentence with the definite article.
+Ensure none of the derivatives of "{word}" are present in the sentence.
+Please avoid starting the sentence with the definite article "the" as much as possible.
 
 To give you a clearer idea, consider this example: If the provided word was "account" tagged as "NN", an appropriate sentence would be:
 I have an account with the bank.'''
