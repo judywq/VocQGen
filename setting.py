@@ -17,10 +17,11 @@ DOMAIN = 'General Academic'
 LEVEL_START = 'B1'
 LEVEL_END = 'lower B2'
 # The number of times to retry when ChatGPT fails to generate a sentence for a word
-RETRY_COUNT_FOR_SINGLE_WORD = 2
+RETRY_COUNT_FOR_SINGLE_WORD = 5
 
 # The start position of keyword selection
 KEYWORD_START_POS = 0
+# KEYWORD_START_POS = 20
 
 # The number of keywords for generating sentences, -1 means all
 KEYWORD_COUNT = -1
