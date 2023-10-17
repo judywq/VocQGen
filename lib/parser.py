@@ -159,6 +159,7 @@ Now please generate a sentence in the domain of English for {domain} purposes th
 The sentence should contain the word "{word}" tagged as "{tag}".
 The word "{word}" should be pivotal to the meaning of the sentence and carries significant weight in the context. 
 The sentence should show a high-frequency use of the word "{word}" tagged as "{tag}". 
+The context of the sentence can extend beyond educational institutions, encompassing a wider academic environment.
 The length of the sentence should be between 20-25 words.
 Ensure "{word}" is not used at the beginning of the sentence or repeated elsewhere in the sentence.
 Ensure none of the derivatives of "{word}" are present in the sentence.
