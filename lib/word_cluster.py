@@ -81,6 +81,13 @@ class WordFamily:
             return ""
         return random.choice(candidates)
     
+    def get_shuffled_words(self):
+        """Get a shuffled list of all words in the family
+        """
+        words = list(self.all_words)
+        random.shuffle(words)
+        return words
+    
     @property
     def tags(self):
         return self.tag_to_words.keys()
@@ -101,10 +108,12 @@ class WordCluster:
         self.tag_to_words.merge(wf.tag_to_words)
         self.word_family_list.append(wf)
     
-    def find_distractors(self, tag, excepts=[], n=10):
+    def find_distractors(self, tag, excepts=None, n=10):
         words = self.tag_to_words.get(tag, set())
         # do not assign back to words, otherwise the original set will be modified
-        candidates = words - set(excepts)
+        candidates = words
+        if excepts:
+            candidates = words - set(excepts)
         
         if 0 <= n < len(candidates):
             # Use sample() instead of choices() to avoid duplicates
@@ -152,6 +161,6 @@ def test_cluster():
 
     
 if __name__ == '__main__':
-    test_word()
+    # test_word()
     test_family()
     # test_cluster()
