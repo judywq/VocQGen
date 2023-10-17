@@ -9,7 +9,8 @@ OFFLINE_CHATGPT = False
 
 DEFAULT_MODEL = 'gpt-3.5-turbo-0301'
 DEFAULT_MODEL = 'gpt-3.5-turbo'
-DEFAULT_MODEL = 'gpt-4'
+# DEFAULT_MODEL = 'gpt-4'
+
 
 SUBLIST = 3
 DOMAIN = 'General Academic'
