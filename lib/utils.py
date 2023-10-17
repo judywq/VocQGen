@@ -2,6 +2,7 @@ import datetime
 import json
 import os
 import pickle
+import re
 from setting import DEFAULT_LOG_LEVEL, RANDOM_SEED
 
 import logging
@@ -57,6 +58,16 @@ def fill_cloze(sentence, word):
     """Fill the blank in the sentence with the word
     """
     return sentence.replace('_' * 4, word)
+
+
+def replace_article(sentence):
+    """Replace the article "a" or "an" into "a/an" before the cloze
+
+    Args:
+        sentence (str): the clozed sentence
+    """
+    pat = re.compile(r"\b(a|an) +_{2,}\b")
+    return pat.sub("a/an " + "_" * 4, sentence)
 
 
 cache_dir = './cache'

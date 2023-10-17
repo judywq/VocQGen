@@ -1,6 +1,6 @@
 import json
 import re
-from lib.utils import cloze_sentence
+from lib.utils import cloze_sentence, replace_article
 
 import logging
 logger = logging.getLogger(__name__)
@@ -187,7 +187,11 @@ I have an account with the bank.'''
                 "success": False,
             }
         
+        # Replace the keyword with a blank
         result = cloze_sentence(response, word)
+        
+        # Replace "a" or "an" with "a/an" before the blank
+        result = replace_article(result)
         
         return {
             **res,
