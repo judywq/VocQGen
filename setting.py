@@ -4,13 +4,13 @@ DEBUG = False
 DEFAULT_LOG_LEVEL = "INFO"
 # DEFAULT_LOG_LEVEL = "DEBUG"
 
-OFFLINE_CHATGPT = True
+# OFFLINE_CHATGPT = True
 OFFLINE_CHATGPT = False
 
-DEFAULT_MODEL = 'gpt-3.5-turbo-0301'
+# DEFAULT_MODEL = 'gpt-3.5-turbo-0301'
 DEFAULT_MODEL = 'gpt-3.5-turbo'
 # DEFAULT_MODEL = 'gpt-4'
-
+REQUEST_TIMEOUT_SECS = 60
 
 SUBLIST = 3
 # Number of words to generate for each word family
