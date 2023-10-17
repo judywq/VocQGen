@@ -47,6 +47,7 @@ def main():
     columns = ['Sentence', 'Correct Answer', *[f'Distractor {i}' for i in range(1, setting.DISTRACTOR_COUNT+1)]]
     data = []
     for i, word_family in enumerate(word_families):
+        count_per_family = 0
         for word in word_family.get_shuffled_words():
             # FIXME: word is '' if inflections not generated correctly
             if not word:
@@ -90,8 +91,13 @@ def main():
                     logger.info(msg)
                     df = pd.DataFrame(data, columns=columns)
                     write_data(df, fn_data)
-                    # Successfully generated a cloze sentence, break the word loop, goto next word family
-                    break
+                    df_log = pd.DataFrame(log_data, columns=log_columns)
+                    write_data(df_log, fn_log)
+                    count_per_family += 1
+                    if count_per_family >= setting.WORD_PER_FAMILY:
+                        # Successfully generated enough number of words for this word family,
+                        #  break the word loop, goto next word family
+                        break
 
             df_log = pd.DataFrame(log_data, columns=log_columns)
             write_data(df_log, fn_log)

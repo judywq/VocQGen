@@ -13,6 +13,8 @@ DEFAULT_MODEL = 'gpt-3.5-turbo'
 
 
 SUBLIST = 3
+# Number of words to generate for each word family
+WORD_PER_FAMILY = 2
 DOMAIN = 'General Academic'
 LEVEL_START = 'B1'
 LEVEL_END = 'lower B2'
