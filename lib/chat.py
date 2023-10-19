@@ -1,4 +1,5 @@
 import openai
+from tenacity import retry, stop_after_attempt
 import setting
 
 import logging
@@ -11,6 +12,7 @@ class MyBotWrapper:
         self.model = model
         self.temperature = temperature
     
+    @retry(stop=stop_after_attempt(3))
     def run(self, inputs):
         prompt = self.parser.compose_prompt(inputs=inputs)
         logger.debug(f"PROMPT: {prompt}")
