@@ -1,5 +1,6 @@
 import spacy
 
+# python -m spacy download en_core_web_sm  # <-- run first time
 nlp = spacy.load("en_core_web_sm")
 
 def pos_check(inputs):

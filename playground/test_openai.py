@@ -1,8 +1,10 @@
-import openai
+from openai import OpenAI
 from pprint import pprint
 
 import sys
 import os
+
+client = OpenAI()
 
 #  https://www.geeksforgeeks.org/python-import-from-parent-directory/
 # getting the name of the directory
@@ -27,10 +29,11 @@ from lib.parser import *
 model = 'gpt-3.5-turbo-0301'
 model = 'gpt-3.5-turbo'
 model = 'gpt-4'
+model = 'gpt-4-1106-preview'
 
 def get_completion(prompt, model="gpt-3.5-turbo"):
     messages = [{"role": "user", "content": prompt}]
-    response = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model=model,
         messages=messages,
         temperature=0, # this is the degree of randomness of the model's output
@@ -102,7 +105,7 @@ def test_rational():
     parser = RationalParser()
     bot = MyBotWrapper(parser=parser, model=model, temperature=0)
     inputs={
-        "words": ["constitute", "distribute", "export", "issue", "occur", "good"], 
+        "candidates": ["constitute", "distribute", "export", "issue", "occur", "good"], 
         "sentence": "The actions of the defendant _____ a breach of contract.",
         }
     # inputs={

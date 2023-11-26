@@ -8,8 +8,10 @@ DEFAULT_LOG_LEVEL = "INFO"
 OFFLINE_CHATGPT = False
 
 # DEFAULT_MODEL = 'gpt-3.5-turbo-0301'
-DEFAULT_MODEL = 'gpt-3.5-turbo'
+# DEFAULT_MODEL = 'gpt-3.5-turbo'
 # DEFAULT_MODEL = 'gpt-4'
+DEFAULT_MODEL = 'gpt-4-1106-preview'
+
 REQUEST_TIMEOUT_SECS = 60
 
 SUBLIST = 3

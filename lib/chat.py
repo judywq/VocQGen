@@ -1,9 +1,12 @@
-import openai
+from openai import OpenAI
 from tenacity import retry, stop_after_attempt
 import setting
 
 import logging
 logger = logging.getLogger(__name__)
+
+client = OpenAI()
+
 
 
 class MyBotWrapper:
@@ -28,13 +31,14 @@ class MyBotWrapper:
 
     def get_completion(self, prompt):
         messages = [{"role": "user", "content": prompt}]
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model=self.model,
             messages=messages,
             temperature=self.temperature, # this is the degree of randomness of the model's output
-            request_timeout=setting.REQUEST_TIMEOUT_SECS,
+            timeout=setting.REQUEST_TIMEOUT_SECS,
+            response_format={ "type": self.parser.response_format }
         )
-        return response.choices[0].message["content"]
+        return response.choices[0].message.content
 
     @property
     def task_name(self):

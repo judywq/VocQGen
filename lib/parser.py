@@ -16,6 +16,7 @@ class ParserBase():
     failure = ""
     result_key = "result"
     task_name = "<Abstract>"
+    response_format = 'text' # 'text' | 'json_object'
     
     def __init__(self):
         self.inputs = None
@@ -160,7 +161,7 @@ The sentence should contain the word "{word}" tagged as "{tag}".
 The word "{word}" should be pivotal to the meaning of the sentence and carries significant weight in the context. 
 The sentence should show a high-frequency use of the word "{word}" tagged as "{tag}". 
 The context of the sentence can extend beyond educational institutions, encompassing a wider academic environment.
-The length of the sentence should be between 20-25 words.
+The length of the sentence should be between 15-20 words.
 Ensure "{word}" is not used at the beginning of the sentence or repeated elsewhere in the sentence.
 Ensure none of the derivatives of "{word}" are present in the sentence.
 Please avoid starting the sentence with the definite article "the" as much as possible.
@@ -272,11 +273,12 @@ Delimit the derivatives with a comma. \
 class RationalParser(ParserBase):
     """Test the rationality of several words in a sentence
     
-    inputs={"words": ["account", "apple"], "sentence": "I have an ______ with the bank."}
+    inputs={"candidates": ["account", "apple"], "sentence": "I have an ______ with the bank."}
     
     return {"success": True, "result": {"account": True, "apple": False}, "good_candidates": ["apple"], "others": ["account"], "words": ["account", "bank"], "sentence": "I have an ______ with the bank."}
     """
     task_name = "Rationality Test"
+    response_format = 'json_object'
     
     def compose_prompt(self, inputs):
         super().compose_prompt(inputs=inputs)
