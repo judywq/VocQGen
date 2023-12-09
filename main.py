@@ -13,9 +13,9 @@ logger = logging.getLogger(__name__)
 
 def main():
     now = get_date_str()
-    path = 'data/input/AWL.xlsx'
+    path = 'data/input/CS2WordList.xlsx'
     sublist = setting.SUBLIST
-    fn_data = f'./data/output/{now}-AWL-sublist-{sublist}-cloze.xlsx'
+    fn_data = f'./data/output/{now}-CS2WordList-cloze.xlsx'
     fn_log = f'./log/excel/{now}-log.xlsx'
     fn_inflections = f'./log/excel/{now}-inflections.xlsx'
     inflection_columns = ['word', 'tag', 'lemm', 'unimorph', 'final']

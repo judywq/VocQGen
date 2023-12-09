@@ -14,9 +14,9 @@ DEFAULT_MODEL = 'gpt-4-1106-preview'
 
 REQUEST_TIMEOUT_SECS = 60
 
-SUBLIST = 3
+SUBLIST = 1
 # Number of words to generate for each word family
-WORD_PER_FAMILY = 2
+WORD_PER_FAMILY = 1
 DOMAIN = 'General Academic'
 LEVEL_START = 'B1'
 LEVEL_END = 'lower B2'
