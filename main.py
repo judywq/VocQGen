@@ -47,6 +47,7 @@ def main():
     columns = ['Sentence', 'Correct Answer', *[f'Distractor {i}' for i in range(1, setting.DISTRACTOR_COUNT+1)]]
     data = []
     for i, word_family in enumerate(word_families):
+        logger.info(f"Processing word family {i+1}/{n_total}: {repr(word_family)}")
         count_per_family = 0
         for word in word_family.get_shuffled_words():
             # FIXME: word is '' if inflections not generated correctly
@@ -143,7 +144,8 @@ def load_sublist(path, sublist=1, max_count=-1):
     """
     df = read_data(path=path)
     df = df[df['Sublist'] == sublist]
-    df = df.astype({'Headword': 'str', 'Related word forms': 'str'})
+    df = df.astype({ 'Headword': 'str' })
+    # df = df.astype({'Related word forms': 'str'})
     wc = WordCluster()
     for i, row in df.iterrows():
         headword = row['Headword']

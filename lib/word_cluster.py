@@ -45,7 +45,7 @@ class WordFamily:
         self.construct(headword=headword, related_words=related_words)
         
     def __repr__(self) -> str:
-        return f"WF: {self.headword}<{self.headword.tag}>"
+        return f"WF: {self.headword}"
     
     def construct(self, headword, related_words):
         self.tag_to_words = ExtendableDict()
