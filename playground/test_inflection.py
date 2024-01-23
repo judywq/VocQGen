@@ -1,5 +1,7 @@
 from os.path import dirname, abspath
 import sys
+
+import pandas as pd
  
 directory = dirname(dirname(abspath(__file__)))
 # https://www.geeksforgeeks.org/python-import-from-parent-directory/
@@ -8,8 +10,9 @@ sys.path.append(directory)
 # import lib.io
 from lib.io import read_data
 from lib.word_cluster import WordCluster
+from lib.inflections import get_inflections
 # from pyinflect import getAllInflections, getInflection
-from lemminflect import getAllInflections, getInflection
+# from lemminflect import getAllInflections, getInflection
 from pprint import pprint
 
 
@@ -36,9 +39,11 @@ def test_single_word():
     w = 'indicate'
     w = 'finance'
     w = 'sector'
-    tag_to_words = get_all_inflections(w)
+    tag_to_words, log = get_inflections(w)
     pprint(tag_to_words)
-    # get_all_inflections_2(w)
+    df = pd.DataFrame(log)
+    print(df)
+
 
 def test_several_words():
     words = [
@@ -50,29 +55,10 @@ def test_several_words():
     # These words have no record in lemminflect
     words =  ['criteria', 'despite', 'whereas', 'albeit', 'so-called']
     for w in words:
-        res = get_all_inflections(w)
+        res = get_inflections(w)
         print(w)
         pprint(res)
 
-
-def get_all_inflections(word):
-    """get all inflections of a word, return a map from tag to a list of inflections
-
-    Args:
-        word (str): an English word
-
-    Returns:
-        dict: a map from tag to a list of inflections, e.g. 
-            {'NN': ['account'],
-            'NNS': ['accounts'],
-            'VB': ['account'],
-            'VBD': ['accounted'],
-            ...}
-    """
-    res = getAllInflections(word)
-    # convert the tuple into a set
-    tag_to_words = {tag: set(words) for tag, words in res.items()}
-    return tag_to_words
 
 
 def test_tags_awl():
@@ -109,7 +95,7 @@ def test_reliability():
     ng = []
     for _, row in df.iterrows():
         w = row['Headword']
-        res = getAllInflections(w)
+        res, log = get_inflections(w)
         if not res:
             ng.append(w)
     if len(ng) > 0:

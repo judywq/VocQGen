@@ -150,24 +150,32 @@ class SentGenParser(ParserBase):
         super().compose_prompt(inputs=inputs)
         word = inputs.get('word')
         tag = inputs.get('tag', 'any')
+        sense = inputs.get('sense', None)
+        country = inputs.get('country', 'Japanese')
         domain = inputs.get('domain', 'General Academic')
+        scope = inputs.get('scope', 'a wide range of general knowledge university students may know that does not require domain-specific academic knowledge')
         level_start = inputs.get('level_start', 'B1')
         level_end = inputs.get('level_end', 'lower B2')
         
-        prompt = f'''You are an English teacher at a Japanese university and you are creating question stems for \
-vocabulary multiple-choice cloze questions for your students whose English proficiency levels range from {level_start} to {level_end} based on CEFR. 
-Now please generate a sentence in the domain of English for {domain} purposes that meets the following criteria:
-The sentence should contain the word "{word}" tagged as "{tag}".
+        if sense:
+            sense_part = f'with the meaning of "{sense}"'
+        else:
+            sense_part = ''
+        
+        prompt = f'''You are an English teacher at a {country} university and you are creating exemplary sentences to show your students the use of specific English words in the domain of English for {domain} Purposes. The English proficiency of your students ranges from {level_start} to {level_end} based on CEFR. They are second language learners in Japan.
+Now please create a sentence that meets the following criteria:
+The sentence should show the use of the word "{word}" tagged as "{tag}".
 The word "{word}" should be pivotal to the meaning of the sentence and carries significant weight in the context. 
-The sentence should show a high-frequency use of the word "{word}" tagged as "{tag}". 
-The context of the sentence can extend beyond educational institutions, encompassing a wider academic environment.
+The sentence should show a common usage of the word "{word}" tagged as "{tag}" {sense_part}. 
+The sentence may be contextualized in {scope}.
+The sentence should be understandable to the target students, with no words beyond their proficiency levels.
 The length of the sentence should be between 15-20 words.
-Ensure "{word}" is not used at the beginning of the sentence or repeated elsewhere in the sentence.
+Ensure "{word}" does not appear at the beginning or the end of the sentence, nor is it repeated elsewhere in the sentence.
 Ensure none of the derivatives of "{word}" are present in the sentence.
 Please avoid starting the sentence with the definite article "the" as much as possible.
 
-To give you a clearer idea, consider this example: If the provided word was "account" tagged as "NN", an appropriate sentence would be:
-I have an account with the bank.'''
+Example: If the provided word is "account", tagged as "NN", an appropriate sentence can be:
+In managing finances, maintaining a bank account is essential for every student.'''
         return prompt
 
     def parse_response(self, prompt, response):
@@ -287,20 +295,20 @@ class RationalParser(ParserBase):
         words_with_comma = ", ".join(set(str(w) for w in candidates))
         sentence = inputs.get('sentence')
         
-        prompt = f'''You are an English teacher at a Japanese university and you are creating distractors for vocabulary multiple-choice cloze questions for your students. 
-In this multiple choice cloze question stem: "{sentence}" 
+        prompt = f'''You are a university English teacher and you are creating distractors for vocabulary multiple-choice cloze questions for your students.
+In this question stem: "{sentence}"
 A list of possible distractors include "{words_with_comma}". 
-Please provide feedback in terms of syntactic appropriateness and contextual/semantic sense-making of the distractors in the completed sentences. 
-Return only the following result in JSON format to me:
+Please evaluate the syntactic appropriateness/grammatical accuracy and contextual appropriateness/semantic sense-making of the distractors in the completed sentences.
+Return only the following result in JSON format:
 {{
-  "word": {{"syntax": true, "semantics": true}},
-  "word": {{"syntax": true, "semantics": false}}
+  "distractor 1": {{"syntax": true, "semantics": true}},
+  "distractor 2": {{"syntax": true, "semantics": false}}
 }}
 
-To provide you with more instructions on judgement, consider the the question stem: "Birds _____ in the sky." The list of distractors include "swim, beat". The distractor "swim" is syntactically valid because there will be no grammar errors when it is filled into the blank, but it does not make sense since birds "fly" in the sky, not "swim". The distractor "beat" is syntactically inappropriate because "beat" is a transitive verb and requires an object after it. There will be  grammar errors when it is filled into the blank. It also does not make much sense or is incomprehensible. Return only the following result in JSON format to me:
+Example: In the question stem: "Birds _____ in the sky." the key is "fly". The list of distractors include "swim, pick". The distractor "swim" is syntactically appropriate because there will be no grammar errors when it is filled into the blank, but it does not make sense since birds "fly" in the sky, not "swim". The distractor "pick" is syntactically inappropriate because "pick" is a transitive verb and requires an object after it. There will be  grammar errors when it is filled into the blank. It also does not make much sense. Thus the returned result in JSON format is as follows:
 {{
   "swim": {{"syntax": true, "semantics": false}},
-  "beat": {{"syntax": false, "semantics": false}}
+  "pick": {{"syntax": false, "semantics": false}}
 }}'''
 # Reply with json object only without any notes. 
 # while using correct articles and prepositions, \

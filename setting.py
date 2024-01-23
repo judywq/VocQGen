@@ -1,3 +1,5 @@
+import os
+
 # DEBUG = True
 DEBUG = False
 
@@ -39,3 +41,6 @@ DISTRACTOR_COUNT = 3 # The number of distractors to output to result
 RANDOM_SEED = 42
 # RANDOM_SEED = -1
 
+
+# Merriam-Webster API key
+DICT_API_KEY = os.environ.get('MERRIAM_WEBSTER_API_KEY', 'NOT_SET')

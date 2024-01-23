@@ -126,6 +126,10 @@ class WordCluster:
         return len(self.tag_to_words)
     
     @property
+    def all_headwords(self):
+        return [wf.headword for wf in self.word_family_list]
+    
+    @property
     def word_family_size(self):
         return len(self.word_family_list)
     

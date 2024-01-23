@@ -1,6 +1,8 @@
 from collections import defaultdict
 from lemminflect import getAllInflections
 from unimorph import inflect_word
+from lib.dict_helper import get_pos_list_of_keyword
+from lib.utils import get_general_pos
 
 import logging
 logger = logging.getLogger(__name__)
@@ -44,6 +46,7 @@ def get_inflections(word):
             'VBD': {'accounted'},
             ...}
     """
+    
     tag_to_words_lemm = get_inflections_lemm(word)
     tag_to_words_unimorph = get_inflections_unimorph(word)
     
@@ -52,6 +55,21 @@ def get_inflections(word):
         inter = value & tag_to_words_unimorph.get(key, set())
         if inter:
             res[key] = inter
+    pos_list = get_pos_list_of_keyword(word)
+    if not res:
+        # No intersection, take the union of intersection with dict pos respectively
+        if not pos_list:
+            raise ValueError(f"Cannot find POS for word: <{word}>")
+        tag_to_words_lemm = filter_inflections_by_pos(tag_to_words_lemm, pos_list)
+        tag_to_words_unimorph = filter_inflections_by_pos(tag_to_words_unimorph, pos_list)
+        
+        # Take the union of the two sets
+        all_tags = set(tag_to_words_lemm.keys()) | set(tag_to_words_unimorph.keys())
+        for tag in all_tags:
+            tmp_union = tag_to_words_lemm.get(tag, set()) | tag_to_words_unimorph.get(tag, set())
+            if tmp_union:
+                res[tag] = tmp_union
+        
     res = get_correct_inflections(res)
 
     # create a dict that logs the differences
@@ -65,9 +83,25 @@ def get_inflections(word):
                          "tag": tag,
                          "lemm": w in tag_to_words_lemm.get(tag, set()),
                          "unimorph": w in tag_to_words_unimorph.get(tag, set()),
+                         "dict_pos": ",".join(pos_list),
                          "final": w in res.get(tag, set()),
                          })
     return res, full_log
+
+
+def filter_inflections_by_pos(tag_to_words: dict, pos_list: list[str]):
+    def is_pos_in_list(tag: str, pos_list: list[str]):
+        for pos in pos_list:
+            general_tag = get_general_pos(tag)
+            if general_tag == pos:
+                return True
+        return False
+    
+    result = {}
+    for tag, words in tag_to_words.items():
+        if is_pos_in_list(tag, pos_list):
+            result[tag] = words
+    return result
 
 
 def get_correct_inflections(tag_to_words: dict):
@@ -101,8 +135,8 @@ def get_correct_inflections(tag_to_words: dict):
 
 def get_inflections_lemm(word):
     res = getAllInflections(word)
-    if not res:
-        logger.warning(f"No inflections found for word: <{word}>")
+    # if not res:
+        # logger.warning(f"No inflections found for word: <{word}>")
     # convert the tuple into a set
     tag_to_words = {tag: set([w for w in words]) for tag, words in res.items()}
     return tag_to_words

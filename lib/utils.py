@@ -110,3 +110,24 @@ def load_config(file='./config.json'):
     with open(file, 'r') as f:
         config = json.load(f)
     return config
+
+def get_general_pos(tag):
+    """Get the general POS tag from a fine-grained POS tag
+    """
+    if tag.startswith('NN'):
+        return 'NN'
+    elif tag.startswith('VB'):
+        return 'VB'
+    elif tag.startswith('JJ'):
+        return 'JJ'
+    elif tag.startswith('RB'):
+        return 'RB'
+    else:
+        return tag
+
+import re
+
+def remove_curly_braces_content(input_string):
+    pattern = re.compile(r'{.*?}')
+    cleaned_string = re.sub(pattern, '', input_string)
+    return cleaned_string

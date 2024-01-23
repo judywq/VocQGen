@@ -1,10 +1,11 @@
 import pandas as pd
 from lib.chat import MyBotWrapper
 from lib.parser import SentGenParser, DerivativeParser, RationalParser
-from lib.utils import fill_cloze, get_date_str, read_from_cache, write_to_cache, setup_log, setup_randomness
+from lib.utils import fill_cloze, get_date_str, get_general_pos, read_from_cache, write_to_cache, setup_log, setup_randomness
 from lib.io import read_data, write_data
 from lib.word_cluster import WordCluster, WordFamily
-from lib.nlp_helper import pos_check
+from lib.nlp_helper import pos_check, is_good_position
+from lib.dict_helper import fetch_words_from_dict, get_senses_of_keyword
 import setting
 
 import logging
@@ -13,25 +14,38 @@ logger = logging.getLogger(__name__)
 
 def main():
     now = get_date_str()
-    path = 'data/input/CS2WordList.xlsx'
+    # input_name = 'CS2WordList'
+    # input_name = 'AWL_sublist1'
+    input_name = 'AWL_sublist1_selected'
+    path = f'data/input/{input_name}.xlsx'
     sublist = setting.SUBLIST
-    fn_data = f'./data/output/{now}-CS2WordList-cloze.xlsx'
+    fn_data = f'./data/output/{now}-{input_name}-cloze.xlsx'
     fn_log = f'./log/excel/{now}-log.xlsx'
+    fn_failure = f'./log/excel/{now}-log-failure.xlsx'
     fn_inflections = f'./log/excel/{now}-inflections.xlsx'
-    inflection_columns = ['word', 'tag', 'lemm', 'unimorph', 'final']
+    inflection_columns = ['word', 'tag', 'lemm', 'unimorph', 'dict_pos', 'final']
+
+
+    df_sublist = load_sublist(path, sublist=sublist)
+    keywords = df_sublist['Headword'].tolist()
+    fetch_words_from_dict(keywords=keywords, api_key=setting.DICT_API_KEY)
 
     logger.info(f"Try loading from cache...")
     word_cluster = read_from_cache(path, sublist)
     if not word_cluster:
         logger.info(f"WordCluster cache not found, load...")
-        word_cluster = load_sublist(path, sublist=sublist)
+        word_cluster = parse_as_word_cluster(df_sublist)
         write_to_cache(path, sublist, word_cluster)
         logger.info(f"WordCluster written to cache")
     else:
         logger.info(f"WordCluster loaded from cache: {path}")
+    
     df_inflections = pd.DataFrame(word_cluster.inflection_log, columns=inflection_columns)
     write_data(df_inflections, fn_inflections)
     logger.info(f"Inflections saved to {fn_inflections}")
+    
+    # Return here if only inflections are needed
+    # return
     
     word_families = select_word_families(word_cluster, start=setting.KEYWORD_START_POS, max_count=setting.KEYWORD_COUNT)
     n_total = len(word_families)
@@ -46,6 +60,8 @@ def main():
     
     columns = ['Sentence', 'Correct Answer', *[f'Distractor {i}' for i in range(1, setting.DISTRACTOR_COUNT+1)]]
     data = []
+    failure_columns = ['word']
+    failure_list = []
     for i, word_family in enumerate(word_families):
         logger.info(f"Processing word family {i+1}/{n_total}: {repr(word_family)}")
         count_per_family = 0
@@ -57,11 +73,13 @@ def main():
             
             keyword = word.surface
             keyword_tag = word.tag
+            headword = word_family.headword.surface
+            sense = select_sense(headword, keyword_tag)
             
             clozed_sentence = None
             for trial in range(setting.RETRY_COUNT_FOR_SINGLE_WORD):
                 # print(f"{repr(w)}: {candidates}")
-                r = bot_sent_gen.run(inputs={"word": keyword, "tag": keyword_tag, "domain": setting.DOMAIN, "level_start": setting.LEVEL_START, "level_end": setting.LEVEL_END})
+                r = bot_sent_gen.run(inputs={"word": keyword, "tag": keyword_tag, "sense": sense, "domain": setting.DOMAIN, "level_start": setting.LEVEL_START, "level_end": setting.LEVEL_END})
                 suc = r.get('success')
                 log_data.append([get_date_str(), bot_sent_gen.task_name, keyword, keyword_tag, r.get('prompt'), r.get('raw_response'), r.get('result'), suc])
                 
@@ -71,12 +89,17 @@ def main():
 
                     suc = pos_check(inputs={"word": keyword, "tag": keyword_tag, "sentence": sentence})
                     log_data.append([get_date_str(), "POS Check", keyword, keyword_tag, f"Tag: {keyword_tag}, Sentence: {sentence}", "-", "-", suc])
+                    
+                    if suc:
+                        suc = is_good_position(sentence, keyword)
+                        log_data.append([get_date_str(), "Position Check", keyword, keyword_tag, f"Tag: {keyword_tag}, Sentence: {sentence}", "-", "-", suc])
                 
                 if suc:
                     break
                 
             if not suc:
                 logger.error(f"Failed to generate sentence for '{repr(word)}'")
+                failure_list.append(word)
             else:
                 # Successfully generated a sentence, now generate distractors
                 distractors = fill_distractors(bot_rational, word_cluster, word, clozed_sentence,n_distractors=setting.TEST_DISTRACTOR_COUNT, log_data=log_data)
@@ -102,6 +125,9 @@ def main():
 
             df_log = pd.DataFrame(log_data, columns=log_columns)
             write_data(df_log, fn_log)
+            
+            df_failure = pd.DataFrame(failure_list, columns=failure_columns)
+            write_data(df_failure, fn_failure)
             # End of word loop
         # End of word family loop
     
@@ -139,13 +165,19 @@ def fill_distractors(bot_rational, word_cluster, word, sentence, n_distractors, 
     return distractors
 
 
-def load_sublist(path, sublist=1, max_count=-1):
-    """Load a sublist from a file as a WordCluster object
+def load_sublist(path, sublist=1):
+    """Load a sublist from a file as a DataFrame
     """
     df = read_data(path=path)
     df = df[df['Sublist'] == sublist]
     df = df.astype({ 'Headword': 'str' })
     # df = df.astype({'Related word forms': 'str'})
+    logger.info("Shape of data: {}\n{}".format(df.shape, df.head()))
+    return df
+
+def parse_as_word_cluster(df, max_count=-1):
+    """Load a sublist from a dataframe as a WordCluster object
+    """
     wc = WordCluster()
     for i, row in df.iterrows():
         headword = row['Headword']
@@ -156,7 +188,6 @@ def load_sublist(path, sublist=1, max_count=-1):
         wc.add_item(headword, related_words)
         if max_count > 0 and i >= max_count:
             break
-    logger.debug("Shape of data: {}\n{}".format(df.shape, df.head()))
     # wc.print()
     return wc
 
@@ -168,6 +199,17 @@ def select_word_families(word_cluster: WordCluster, start=0, max_count=-1) -> li
         if max_count > 0 and len(word_families) >= max_count:
             break
     return word_families
+
+
+def select_sense(headword, pos):
+    """Select a sense for a word based on its POS tag
+    """
+    # Select the first sense for now
+    selection = 0
+    sense_map = get_senses_of_keyword(headword)
+    general_pos = get_general_pos(pos)
+    sense = sense_map.get(general_pos, [None])[selection]
+    return sense
 ################################
 
     
