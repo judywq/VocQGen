@@ -357,4 +357,87 @@ Example: In the question stem: "Birds _____ in the sky." the key is "fly". The l
         }
 
 
+class PosRankParser(ParserBase):
+    """Get the most frequently used pos of a word
+    
+    inputs={"keyword": "account", tags: ["..."]}
+    
+    return {"success": True, "result": ["..."]} }
+    """
+    task_name = "POS Ranking"
+    response_format = 'json_object'
+    
+    def compose_prompt(self, inputs):
+        super().compose_prompt(inputs=inputs)
+        keyword = inputs.get('keyword')
+        student_type = inputs.get('student_type', 'Japanese university ESL students')
+        tags = inputs.get('tags', [])
+        pos_list = "\n".join(tags)
+        
+        prompt = f'''For the word {keyword}, the following is a list of Part of Speech it can take on.
+Please decide which of the POS {student_type} are most likely to be familiar with. 
+Respond in JSON format in this form: {"familiar_pos": [...]}. 
+List of POSs: {pos_list}'''
+
+        return prompt
+
+    def parse_response(self, prompt, response):
+        res = super().parse_response(prompt=prompt, response=response)
+        try:
+            obj = json.loads(response)
+            top_pos = obj.get('familiar_pos', [])
+            return {
+                **res,
+                "result": top_pos,
+            }
+        except json.decoder.JSONDecodeError as e:
+            return {
+                **res,
+                "success": False,
+            }
+
+
+
+class SenseRankParser(ParserBase):
+    """Get the most frequently used senses of a word
+    
+    inputs={"keyword": "account", "tag": "VB", senses: ["..."]}
+    
+    return {"success": True, "result": ["..."]} }
+    """
+    task_name = "Sense Ranking"
+    response_format = 'json_object'
+    
+    def compose_prompt(self, inputs):
+        super().compose_prompt(inputs=inputs)
+        keyword = inputs.get('keyword')
+        tag = inputs.get('tag')
+        student_type = inputs.get('student_type', 'Japanese university ESL students')
+        senses = inputs.get('senses', [])
+        sense_list = "\n".join(senses)
+        
+        prompt = f'''For the word "{keyword}" tagged as {tag},  the following is a list of definitions.
+Please decide which of the definitions {student_type} are most likely to be familiar with.
+Respond in JSON format in this form: {{"definitions": [...]}}.
+List of definitions:
+{sense_list}'''
+
+        return prompt
+
+    def parse_response(self, prompt, response):
+        res = super().parse_response(prompt=prompt, response=response)
+        try:
+            obj = json.loads(response)
+            top_senses = obj.get('definitions', [])
+            return {
+                **res,
+                "result": top_senses,
+            }
+        except json.decoder.JSONDecodeError as e:
+            return {
+                **res,
+                "success": False,
+            }
+
+
 

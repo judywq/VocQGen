@@ -1,6 +1,6 @@
 import pandas as pd
 from lib.chat import MyBotWrapper
-from lib.parser import SentGenParser, DerivativeParser, RationalParser
+from lib.parser import SenseRankParser, SentGenParser, DerivativeParser, RationalParser
 from lib.utils import fill_cloze, get_date_str, get_general_pos, read_from_cache, write_to_cache, setup_log, setup_randomness
 from lib.io import read_data, write_data
 from lib.word_cluster import WordCluster, WordFamily
@@ -15,8 +15,8 @@ logger = logging.getLogger(__name__)
 def main():
     now = get_date_str()
     # input_name = 'CS2WordList'
-    # input_name = 'AWL_sublist1'
-    input_name = 'AWL_sublist1_selected'
+    input_name = 'AWL_sublist1'
+    # input_name = 'AWL_sublist1_selected'
     path = f'data/input/{input_name}.xlsx'
     sublist = setting.SUBLIST
     fn_data = f'./data/output/{now}-{input_name}-cloze.xlsx'
@@ -46,7 +46,7 @@ def main():
     
     # Return here if only inflections are needed
     # return
-    
+
     word_families = select_word_families(word_cluster, start=setting.KEYWORD_START_POS, max_count=setting.KEYWORD_COUNT)
     n_total = len(word_families)
     logger.info(f"Start generating cloze sentences for {n_total} words...")
@@ -54,6 +54,7 @@ def main():
     bot_sent_gen = MyBotWrapper(parser=SentGenParser(), temperature=0.9)
     # bot_derive = MyBotWrapper(parser=DerivativeParser(), temperature=0.1)
     bot_rational = MyBotWrapper(parser=RationalParser(), temperature=0)
+    bot_sense_rank = MyBotWrapper(parser=SenseRankParser(), temperature=0)
 
     log_columns = ['Date', 'Task', 'Keyword', 'Tag', 'Prompt', 'Raw Response', 'Parsed Result', 'Success']
     log_data = []
@@ -70,11 +71,23 @@ def main():
             if not word:
                 logger.warning(f"Empty word in word family: {repr(word_family)}")
                 continue
-            
+
             keyword = word.surface
             keyword_tag = word.tag
             headword = word_family.headword.surface
-            sense = select_sense(headword, keyword_tag)
+            senses = select_senses(headword, keyword_tag)
+            
+            r = bot_sense_rank.run(inputs={"keyword": keyword, "tag": keyword_tag, "senses": senses})
+            suc = r.get('success')
+            log_data.append([get_date_str(), bot_sense_rank.task_name, keyword, keyword_tag, r.get('prompt'), r.get('raw_response'), r.get('result'), suc])
+            if not suc:
+                logger.error(f"Failed to rank senses for '{repr(word)}'")
+                failure_list.append(word)
+                continue
+            
+            top_senses = r.get('result')
+            sense = top_senses[0]
+            # sense = select_sense(headword, keyword_tag)
             
             clozed_sentence = None
             for trial in range(setting.RETRY_COUNT_FOR_SINGLE_WORD):
@@ -201,15 +214,13 @@ def select_word_families(word_cluster: WordCluster, start=0, max_count=-1) -> li
     return word_families
 
 
-def select_sense(headword, pos):
-    """Select a sense for a word based on its POS tag
+def select_senses(headword, pos):
+    """Select all senses of a POS tag for a word
     """
-    # Select the first sense for now
-    selection = 0
     sense_map = get_senses_of_keyword(headword)
     general_pos = get_general_pos(pos)
-    sense = sense_map.get(general_pos, [None])[selection]
-    return sense
+    senses = sense_map.get(general_pos, [])
+    return senses
 ################################
 
     
