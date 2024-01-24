@@ -49,21 +49,21 @@ def get_inflections(word):
     
     tag_to_words_lemm = get_inflections_lemm(word)
     tag_to_words_unimorph = get_inflections_unimorph(word)
+    pos_list = get_pos_list_of_keyword(word)
+    if not pos_list:
+        logging.warning(f"Cannot find POS for word: <{word}>, please check the word is fetched from the dictionary.")
+    tag_to_words_lemm = filter_inflections_by_pos(tag_to_words_lemm, pos_list)
+    tag_to_words_unimorph = filter_inflections_by_pos(tag_to_words_unimorph, pos_list)
     
     res = {}
+    # Take the intersection of the two sets
     for key, value in tag_to_words_lemm.items():
         inter = value & tag_to_words_unimorph.get(key, set())
         if inter:
             res[key] = inter
-    pos_list = get_pos_list_of_keyword(word)
+
     if not res:
         # No intersection, take the union of intersection with dict pos respectively
-        if not pos_list:
-            raise ValueError(f"Cannot find POS for word: <{word}>")
-        tag_to_words_lemm = filter_inflections_by_pos(tag_to_words_lemm, pos_list)
-        tag_to_words_unimorph = filter_inflections_by_pos(tag_to_words_unimorph, pos_list)
-        
-        # Take the union of the two sets
         all_tags = set(tag_to_words_lemm.keys()) | set(tag_to_words_unimorph.keys())
         for tag in all_tags:
             tmp_union = tag_to_words_lemm.get(tag, set()) | tag_to_words_unimorph.get(tag, set())
@@ -85,6 +85,15 @@ def get_inflections(word):
                          "unimorph": w in tag_to_words_unimorph.get(tag, set()),
                          "dict_pos": ",".join(pos_list),
                          "final": w in res.get(tag, set()),
+                         })
+    else:
+        full_log.append({
+                         "word": w,
+                         "tag": '-',
+                         "lemm": '-',
+                         "unimorph": '-',
+                         "dict_pos": ",".join(pos_list),
+                         "final": '-',
                          })
     return res, full_log
 
