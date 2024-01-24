@@ -9,7 +9,6 @@ logger = logging.getLogger(__name__)
 
 
 
-
 class MyWord:
     def __init__(self, surface, tag=None) -> None:
         self.surface = surface
@@ -40,7 +39,7 @@ class WordFamily:
     def __init__(self, headword: str, related_words: Optional[List[str]]=None) -> None:
         self.tag_to_words = None
         self.all_words = set()
-        # self.headword = headword
+        self.headword = headword
         self.inflection_log = []
         self.construct(headword=headword, related_words=related_words)
         
@@ -59,9 +58,9 @@ class WordFamily:
             
             self.inflection_log.extend(full_log)
             self.tag_to_words.merge(tag_to_words)
-            if i == 0:
-                self.headword = next(filter(lambda w: w.surface==word_surface, 
-                            [w for tmp_words in self.tag_to_words.values() for w in tmp_words]), "")
+            # if i == 0:
+            #     self.headword = next(filter(lambda w: w.surface==word_surface, 
+            #                 [w for tmp_words in self.tag_to_words.values() for w in tmp_words]), "")
         if self.tag_to_words:
             self.all_words = reduce(lambda x, y: x.union(y), self.tag_to_words.values())
         else:

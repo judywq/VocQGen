@@ -154,9 +154,12 @@ def load_parsed_keyword(keyword):
 
 def get_pos_list_of_keyword(keyword):
     result_list = load_parsed_keyword(keyword)
-    pos_list = [fl_to_pos.get(entry.get('fl'), entry.get('fl')) for entry in result_list]
+    pos_list = [translate_fl_to_pos(entry.get('fl')) for entry in result_list]
     return pos_list
 
+
+def translate_fl_to_pos(fl):
+    return fl_to_pos.get(fl, fl)
 
 def get_senses_of_keyword(keyword):
     """Get senses of a keyword, organized by pos tags
@@ -170,7 +173,7 @@ def get_senses_of_keyword(keyword):
     result_list = load_parsed_keyword(keyword)
     sense_mapping = {}
     for entry in result_list:
-        pos = fl_to_pos.get(entry.get('fl'), entry.get('fl'))
+        pos = translate_fl_to_pos(entry.get('fl'))
         senses = entry.get('senses', [])
         texts = [sense.get('text') for sense in senses]
         # texts = [remove_curly_braces_content(text) for text in texts]

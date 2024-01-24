@@ -372,11 +372,11 @@ class PosRankParser(ParserBase):
         keyword = inputs.get('keyword')
         student_type = inputs.get('student_type', 'Japanese university ESL students')
         tags = inputs.get('tags', [])
-        pos_list = "\n".join(tags)
+        pos_list = ",".join(tags)
         
-        prompt = f'''For the word {keyword}, the following is a list of Part of Speech it can take on.
+        prompt = f'''For the word "{keyword}", the following is a list of Part of Speech it can take on.
 Please decide which of the POS {student_type} are most likely to be familiar with. 
-Respond in JSON format in this form: {"familiar_pos": [...]}. 
+Respond in JSON format in this form: {{"familiar_pos": [...]}}. 
 List of POSs: {pos_list}'''
 
         return prompt

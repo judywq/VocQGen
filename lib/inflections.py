@@ -1,8 +1,10 @@
 from collections import defaultdict
 from lemminflect import getAllInflections
 from unimorph import inflect_word
-from lib.dict_helper import get_pos_list_of_keyword
+from lib.dict_helper import get_pos_list_of_keyword, translate_fl_to_pos
 from lib.utils import get_general_pos
+from lib.parser import PosRankParser
+from lib.chat import MyBotWrapper
 
 import logging
 logger = logging.getLogger(__name__)
@@ -32,11 +34,17 @@ def convert_unimorph_to_penn(unimorph_tag):
     return unimorph_to_penn.get(unimorph_tag, 'UNK')  # 'UNK' for unknown tags
 
 
-def get_inflections(word):
+def get_inflections(headword):
     """get all inflections of a word, return a map from tag to a set of inflections
+    
+    1. Get all POS tags from dictionary
+    2. Filter out unimportant POS tags using GPT
+    3. Get the union of inflections from lemm and unimorph
+    4. Take the intersection of the union (step 3) with the result of step 2
+    5. If the result is empty, simply use the dictionary form
 
     Args:
-        word (str): an English word
+        headword (str): an English word
 
     Returns:
         dict: a mapping from tag to a set of words, e.g. 
@@ -47,53 +55,67 @@ def get_inflections(word):
             ...}
     """
     
-    tag_to_words_lemm = get_inflections_lemm(word)
-    tag_to_words_unimorph = get_inflections_unimorph(word)
-    pos_list = get_pos_list_of_keyword(word)
-    if not pos_list:
-        logging.warning(f"Cannot find POS for word: <{word}>, please check the word is fetched from the dictionary.")
-    tag_to_words_lemm = filter_inflections_by_pos(tag_to_words_lemm, pos_list)
-    tag_to_words_unimorph = filter_inflections_by_pos(tag_to_words_unimorph, pos_list)
-    
-    res = {}
-    # Take the intersection of the two sets
-    for key, value in tag_to_words_lemm.items():
-        inter = value & tag_to_words_unimorph.get(key, set())
-        if inter:
-            res[key] = inter
-
-    if not res:
-        # No intersection, take the union of intersection with dict pos respectively
-        all_tags = set(tag_to_words_lemm.keys()) | set(tag_to_words_unimorph.keys())
-        for tag in all_tags:
-            tmp_union = tag_to_words_lemm.get(tag, set()) | tag_to_words_unimorph.get(tag, set())
-            if tmp_union:
-                res[tag] = tmp_union
-        
-    res = get_correct_inflections(res)
-
+    tag_to_words_lemm = get_inflections_lemm(headword)
+    tag_to_words_unimorph = get_inflections_unimorph(headword)
     # create a dict that logs the differences
     total_keys = set(tag_to_words_lemm.keys()) | set(tag_to_words_unimorph.keys())
+        
+    # 1. Get all POS tags from dictionary
+    pos_list = get_pos_list_of_keyword(headword)
+    if not pos_list:
+        logging.warning(f"Cannot find POS for word: <{headword}>, please check the word is fetched from the dictionary.")
+    
+    # 2. Filter out unimportant POS tags using GPT
+    bot = MyBotWrapper(parser=PosRankParser(), temperature=0)
+    r = bot.run(inputs={'keyword': headword, 'tags': pos_list})
+    top_pos_list = r.get('result', [])
+    top_pos_list = [translate_fl_to_pos(tag) for tag in top_pos_list]
+    
+    total_keys |= set(top_pos_list)
+
+    # 3. Take the union of the two sets
+    res = {}
+    all_tags = set(tag_to_words_lemm.keys()) | set(tag_to_words_unimorph.keys())
+    for tag in all_tags:
+        tmp_union = tag_to_words_lemm.get(tag, set()) | tag_to_words_unimorph.get(tag, set())
+        if tmp_union:
+            res[tag] = tmp_union    
+    
+    # 4. Filter the union by the top_pos_list
+    res = filter_inflections_by_pos(res, top_pos_list)
+
+    # 5. If the final result is empty, simply use the dictionary form
+    if len(res) <= 0:
+        for tag in top_pos_list:
+            res[tag] = {headword}
+
+    res = get_correct_inflections(res)
+
     full_log = []
-    for tag in total_keys:
-        total_values = tag_to_words_lemm.get(tag, set()) | tag_to_words_unimorph.get(tag, set())
-        for w in total_values:
-            full_log.append({
-                         "word": w,
-                         "tag": tag,
-                         "lemm": w in tag_to_words_lemm.get(tag, set()),
-                         "unimorph": w in tag_to_words_unimorph.get(tag, set()),
-                         "dict_pos": ",".join(pos_list),
-                         "final": w in res.get(tag, set()),
-                         })
-    else:
+    if len(total_keys) <= 0:
         full_log.append({
+                         "headword": headword,
                          "word": w,
                          "tag": '-',
                          "lemm": '-',
                          "unimorph": '-',
                          "dict_pos": ",".join(pos_list),
+                         "gpt_pos": ",".join(top_pos_list),
                          "final": '-',
+                         })
+    for tag in total_keys:
+        total_values = tag_to_words_lemm.get(tag, set()) | tag_to_words_unimorph.get(tag, set())
+        total_values |= res.get(tag, set())
+        for w in total_values:
+            full_log.append({
+                         "headword": headword,
+                         "word": w,
+                         "tag": tag,
+                         "lemm": w in tag_to_words_lemm.get(tag, set()),
+                         "unimorph": w in tag_to_words_unimorph.get(tag, set()),
+                         "dict_pos": ",".join(pos_list),
+                         "gpt_pos": ",".join(top_pos_list),
+                         "final": w in res.get(tag, set()),
                          })
     return res, full_log
 

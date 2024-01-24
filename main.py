@@ -23,11 +23,13 @@ def main():
     fn_log = f'./log/excel/{now}-log.xlsx'
     fn_failure = f'./log/excel/{now}-log-failure.xlsx'
     fn_inflections = f'./log/excel/{now}-inflections.xlsx'
-    inflection_columns = ['word', 'tag', 'lemm', 'unimorph', 'dict_pos', 'final']
-
+    # inflection_columns = ['word', 'tag', 'lemm', 'unimorph', 'dict_pos', 'gpt_pos', 'final']
 
     df_sublist = load_sublist(path, sublist=sublist)
     keywords = df_sublist['Headword'].tolist()
+    selected_keywords = keywords
+    if 'Select' in df_sublist.columns:
+        selected_keywords = df_sublist.loc[df_sublist['Select'] == 1, 'Headword'].tolist()
     fetch_words_from_dict(keywords=keywords, api_key=setting.DICT_API_KEY)
 
     logger.info(f"Try loading from cache...")
@@ -40,14 +42,16 @@ def main():
     else:
         logger.info(f"WordCluster loaded from cache: {path}")
     
-    df_inflections = pd.DataFrame(word_cluster.inflection_log, columns=inflection_columns)
+    # df_inflections = pd.DataFrame(word_cluster.inflection_log, columns=inflection_columns)
+    df_inflections = pd.DataFrame(word_cluster.inflection_log)
     write_data(df_inflections, fn_inflections)
     logger.info(f"Inflections saved to {fn_inflections}")
     
+    # word_cluster.print()
     # Return here if only inflections are needed
     # return
 
-    word_families = select_word_families(word_cluster, start=setting.KEYWORD_START_POS, max_count=setting.KEYWORD_COUNT)
+    word_families = select_word_families(word_cluster, selected_keywords=selected_keywords, start=setting.KEYWORD_START_POS, max_count=setting.KEYWORD_COUNT)
     n_total = len(word_families)
     logger.info(f"Start generating cloze sentences for {n_total} words...")
 
@@ -74,7 +78,7 @@ def main():
 
             keyword = word.surface
             keyword_tag = word.tag
-            headword = word_family.headword.surface
+            headword = word_family.headword
             senses = select_senses(headword, keyword_tag)
             
             r = bot_sense_rank.run(inputs={"keyword": keyword, "tag": keyword_tag, "senses": senses})
@@ -205,10 +209,11 @@ def parse_as_word_cluster(df, max_count=-1):
     return wc
 
 
-def select_word_families(word_cluster: WordCluster, start=0, max_count=-1) -> list[WordFamily]:
+def select_word_families(word_cluster: WordCluster, selected_keywords: list[str] = None, start=0, max_count=-1) -> list[WordFamily]:
     word_families = []
     for wf in word_cluster.word_family_list[start:]:
-        word_families.append(wf)
+        if selected_keywords is None or str(wf.headword) in selected_keywords:
+            word_families.append(wf)
         if max_count > 0 and len(word_families) >= max_count:
             break
     return word_families

@@ -39,8 +39,14 @@ def test_single_word():
     w = 'indicate'
     w = 'finance'
     w = 'sector'
+    w = 'contextualize'
+    w = 'analyze'
+    # w = 'beneficial'
+    # w = 'whereas'
+    w = 'conceptualisation'
+    w = 'analyser'
     tag_to_words, log = get_inflections(w)
-    pprint(tag_to_words)
+    print(",".join(tag_to_words.keys()))
     df = pd.DataFrame(log)
     print(df)
 
