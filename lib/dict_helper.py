@@ -177,8 +177,9 @@ def get_senses_of_keyword(keyword):
         senses = entry.get('senses', [])
         texts = [sense.get('text') for sense in senses]
         # texts = [remove_curly_braces_content(text) for text in texts]
-        sense_mapping[pos] = texts
-        
+        tmp_senses = sense_mapping.get(pos, [])
+        tmp_senses.extend(texts)
+        sense_mapping[pos] = tmp_senses
     return sense_mapping
 
 
