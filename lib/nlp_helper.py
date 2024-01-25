@@ -11,6 +11,7 @@ def pos_check(inputs):
     
     doc = nlp(sentence)
     for token in doc:
+        # print(token.tag_, token.text)
         if token.text == word and token.tag_ == tag:
             return True
         

@@ -80,8 +80,12 @@ def main():
             keyword_tag = word.tag
             headword = word_family.headword
             senses = select_senses(headword, keyword_tag)
+            if not senses:
+                logger.error(f"No senses found for '{repr(word)}'")
+                failure_list.append(word)
+                continue
             
-            r = bot_sense_rank.run(inputs={"keyword": keyword, "tag": keyword_tag, "senses": senses})
+            r = bot_sense_rank.run(inputs={"keyword": keyword, "tag": keyword_tag, "senses": senses, "student_type": setting.STUDENT_TYPE})
             suc = r.get('success')
             log_data.append([get_date_str(), bot_sense_rank.task_name, keyword, keyword_tag, r.get('prompt'), r.get('raw_response'), r.get('result'), suc])
             if not suc:
@@ -90,13 +94,20 @@ def main():
                 continue
             
             top_senses = r.get('result')
-            sense = top_senses[0]
+            if len(top_senses) > 0:
+                sense = top_senses[0]
+            else:
+                logger.error(f"Ranked senses is empty, use original sense. Word: '{repr(word)}'")
+                sense = senses[0]
+                
             # sense = select_sense(headword, keyword_tag)
             
             clozed_sentence = None
             for trial in range(setting.RETRY_COUNT_FOR_SINGLE_WORD):
                 # print(f"{repr(w)}: {candidates}")
-                r = bot_sent_gen.run(inputs={"word": keyword, "tag": keyword_tag, "sense": sense, "domain": setting.DOMAIN, "level_start": setting.LEVEL_START, "level_end": setting.LEVEL_END})
+                r = bot_sent_gen.run(inputs={"word": keyword, "tag": keyword_tag, "sense": sense, 
+                                             "domain": setting.DOMAIN, "level_start": setting.LEVEL_START, "level_end": setting.LEVEL_END,
+                                             "student_type": setting.STUDENT_TYPE})
                 suc = r.get('success')
                 log_data.append([get_date_str(), bot_sent_gen.task_name, keyword, keyword_tag, r.get('prompt'), r.get('raw_response'), r.get('result'), suc])
                 
@@ -209,7 +220,8 @@ def parse_as_word_cluster(df, max_count=-1):
     return wc
 
 
-def select_word_families(word_cluster: WordCluster, selected_keywords: list[str] = None, start=0, max_count=-1) -> list[WordFamily]:
+def select_word_families(word_cluster: WordCluster, selected_keywords: list[str] = None, start=1, max_count=-1) -> list[WordFamily]:
+    start = max(start - 1, 0)
     word_families = []
     for wf in word_cluster.word_family_list[start:]:
         if selected_keywords is None or str(wf.headword) in selected_keywords:

@@ -153,8 +153,8 @@ class SentGenParser(ParserBase):
         sense = inputs.get('sense', None)
         country = inputs.get('country', 'Japanese')
         domain = inputs.get('domain', 'General Academic')
-        scope = inputs.get('scope', 'a wide range of general knowledge university students may know that does not require domain-specific academic knowledge')
-        level_start = inputs.get('level_start', 'B1')
+        scope = inputs.get('scope', 'a wide range of general topics your students may know that does not require domain-specific English knowledge')
+        level_start = inputs.get('level_start', 'A2')
         level_end = inputs.get('level_end', 'lower B2')
         
         if sense:
@@ -162,7 +162,9 @@ class SentGenParser(ParserBase):
         else:
             sense_part = ''
         
-        prompt = f'''You are an English teacher at a {country} university and you are creating exemplary sentences to show your students the use of specific English words in the domain of English for {domain} Purposes. The English proficiency of your students ranges from {level_start} to {level_end} based on CEFR. They are second language learners in Japan.
+        prompt = f'''You are an English teacher at a {country} university and you are creating exemplary sentences to show your students\
+the use of specific English words in the domain of English for {domain} Purposes.
+The English proficiency of your students ranges from {level_start} to {level_end} based on CEFR. They are second language learners in Japan.
 Now please create a sentence that meets the following criteria:
 The sentence should show the use of the word "{word}" tagged as "{tag}".
 The word "{word}" should be pivotal to the meaning of the sentence and carries significant weight in the context. 
@@ -375,8 +377,10 @@ class PosRankParser(ParserBase):
         pos_list = ",".join(tags)
         
         prompt = f'''For the word "{keyword}", the following is a list of Part of Speech it can take on.
-Please decide which of the POS {student_type} are most likely to be familiar with. 
-Respond in JSON format in this form: {{"familiar_pos": [...]}}. 
+Shortlist the POS tags by deciding which POS tags reflect the common usage of the word. 
+Then sort the shortlisted POS tags in terms of use frequency in descending order.
+Please do not add any new POS tags.
+Respond in JSON format in this form: {{"common_pos": [...]}}. 
 List of POSs: {pos_list}'''
 
         return prompt
@@ -385,7 +389,7 @@ List of POSs: {pos_list}'''
         res = super().parse_response(prompt=prompt, response=response)
         try:
             obj = json.loads(response)
-            top_pos = obj.get('familiar_pos', [])
+            top_pos = obj.get('common_pos', [])
             return {
                 **res,
                 "result": top_pos,
@@ -417,8 +421,11 @@ class SenseRankParser(ParserBase):
         sense_list = "\n".join(senses)
         
         prompt = f'''For the word "{keyword}" tagged as {tag},  the following is a list of definitions.
-Please decide which of the definitions {student_type} are most likely to be familiar with.
-Respond in JSON format in this form: {{"definitions": [...]}}.
+Consolidate the similar definitions and shortlist the definitions that are most likely to be familiar to the following students.
+Then sort the shortlisted definitions based on student familiarity in descending order.
+Please do not add any new definitions to this shortlist, and keep at least 1 definition.
+Students: {student_type}
+Respond in JSON format in this form: {{"shortlisted_definitions": [...]}}.
 List of definitions:
 {sense_list}'''
 
@@ -428,7 +435,7 @@ List of definitions:
         res = super().parse_response(prompt=prompt, response=response)
         try:
             obj = json.loads(response)
-            top_senses = obj.get('definitions', [])
+            top_senses = obj.get('shortlisted_definitions', [])
             return {
                 **res,
                 "result": top_senses,

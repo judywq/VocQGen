@@ -45,6 +45,8 @@ def test_single_word():
     # w = 'whereas'
     w = 'conceptualisation'
     w = 'analyser'
+    w = 'constitutional'
+    # w = 'distributive'
     tag_to_words, log = get_inflections(w)
     print(",".join(tag_to_words.keys()))
     df = pd.DataFrame(log)

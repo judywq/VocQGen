@@ -20,13 +20,14 @@ SUBLIST = 1
 # Number of words to generate for each word family
 WORD_PER_FAMILY = 1
 DOMAIN = 'General Academic'
-LEVEL_START = 'B1'
+LEVEL_START = 'A2'
 LEVEL_END = 'lower B2'
+STUDENT_TYPE = 'Japanese university students without domain-specific English knowledge whose proficiency level is A2-B2'
 # The number of times to retry when ChatGPT fails to generate a sentence for a word
 RETRY_COUNT_FOR_SINGLE_WORD = 5
 
-# The start position of keyword selection
-KEYWORD_START_POS = 0
+# The start position of keyword selection (count from 1, inclusive)
+KEYWORD_START_POS = 1
 # KEYWORD_START_POS = 20
 
 # The number of keywords for generating sentences, -1 means all
