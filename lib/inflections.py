@@ -42,6 +42,7 @@ def get_inflections(headword):
     3. Get the union of inflections from lemm and unimorph
     4. Take the intersection of the union (step 3) with the result of step 2
     5. If the result is empty, simply use the dictionary form
+    6. If the result is still empty, try use the intersection of the two sets
 
     Args:
         headword (str): an English word
@@ -88,6 +89,13 @@ def get_inflections(headword):
     if len(res) <= 0:
         for tag in top_pos_list:
             res[tag] = {headword}
+    
+    # 6. If the result is still empty, try use the intersection of the two sets
+    if len(res) <= 0:
+        for key, value in tag_to_words_lemm.items():
+            inter = value & tag_to_words_unimorph.get(key, set())
+            if inter:
+                res[key] = inter
 
     res = get_correct_inflections(res)
 
