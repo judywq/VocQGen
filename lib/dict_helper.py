@@ -101,9 +101,9 @@ def parse_json_data(json_data, headword=None):
     american_spelling = _try_get_american_spelling(json_data)
     if american_spelling is not None:
         json_data = try_load_from_json(american_spelling)
+        headword = american_spelling
     
     result_list = []
-    first_entry_hw = None
     # Extract 'fl' (function label) and 'sense' information
     if _is_valid_json_data(json_data):
         for entry in json_data:
@@ -113,9 +113,7 @@ def parse_json_data(json_data, headword=None):
             # print(f'Function Label: {fl}')
             id = entry.get('meta', {}).get('id')
             current_headword = id.split(':')[0]
-            first_entry_hw = first_entry_hw or current_headword
-            
-            if headword is not None and current_headword != first_entry_hw:
+            if headword is not None and current_headword != headword:
                 continue
             
             # stems = entry.get('meta', {}).get('stems', [])
@@ -140,7 +138,7 @@ def parse_json_data(json_data, headword=None):
                             result_entry['senses'].append({'sn': sn, 'text': sense_text})
             result_list.append(result_entry)
     else:
-        print(f'No results found for the keyword: {headword}')    
+        logging.warning(f'No valid json data found for the keyword: {headword}')    
     return result_list
 
 
@@ -159,7 +157,10 @@ def get_pos_list_of_keyword(keyword):
 
 
 def translate_fl_to_pos(fl):
-    return fl_to_pos.get(fl, fl)
+    if isinstance(fl, str):
+        fl_lower = fl.lower()
+        return fl_to_pos.get(fl_lower, fl)
+    return 'UNK'
 
 def get_senses_of_keyword(keyword):
     """Get senses of a keyword, organized by pos tags
