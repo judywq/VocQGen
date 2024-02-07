@@ -71,7 +71,6 @@ def main():
         logger.info(f"Processing word family {i+1}/{n_total}: {repr(word_family)}")
         count_per_family = 0
         for word in word_family.get_shuffled_words():
-            # FIXME: word is '' if inflections not generated correctly
             if not word:
                 logger.warning(f"Empty word in word family: {repr(word_family)}")
                 continue

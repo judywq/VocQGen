@@ -33,6 +33,13 @@ $ $ SYM $ quantmod $ False False
 billion billion NUM CD pobj xxxx True False    
 """    
 
+def test_sentence():
+    # https://spacy.io/usage/linguistic-features
+    doc = nlp("He saw a broken table.")
+
+    for token in doc:
+        print(token.text, token.lemma_, token.pos_, token.tag_, token.dep_,
+                token.shape_, token.is_alpha, token.is_stop)
 
 def print_spacy_tags():
     # https://machinelearningknowledge.ai/tutorial-on-spacy-part-of-speech-pos-tagging/
@@ -63,7 +70,8 @@ dying    die      VERB   VBG    dobj   verb                 verb, gerund or pres
 if __name__ == '__main__':
     # print_all_tags()
     # test1()
-    print_spacy_tags()
+    # print_spacy_tags()
+    test_sentence()
 
 
 

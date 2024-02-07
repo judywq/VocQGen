@@ -10,7 +10,7 @@ sys.path.append(directory)
 # import lib.io
 from lib.io import read_data
 from lib.word_cluster import WordCluster
-from lib.inflections import get_inflections
+from lib.inflections import get_inflections, get_inflections_lemm, get_inflections_unimorph
 # from pyinflect import getAllInflections, getInflection
 # from lemminflect import getAllInflections, getInflection
 from pprint import pprint
@@ -25,6 +25,18 @@ def test1():
     print(doc[3].tag_)                # NN
     print(doc[3]._.inflect('NNS'))    # examples
 
+
+def test_libs():
+    w = 'happily'
+    w = 'greatly'
+    
+    lemm = get_inflections_lemm(w)
+    print('---- lemm')
+    pprint(lemm)
+    
+    unimorph = get_inflections_unimorph(w)
+    print('---- unimorph')
+    pprint(unimorph)
 
 def test_single_word():
     w = 'approach'
@@ -46,7 +58,10 @@ def test_single_word():
     w = 'conceptualisation'
     w = 'analyser'
     w = 'constitutional'
-    # w = 'distributive'
+    w = 'distributive'
+    # w = 'functional'
+    # w = 'redistribution'
+    # w = 'reinterpretation'
     tag_to_words, log = get_inflections(w)
     print(",".join(tag_to_words.keys()))
     df = pd.DataFrame(log)
@@ -114,7 +129,8 @@ def test_reliability():
 
 if __name__ == '__main__':
     # test1()
-    test_single_word()
+    test_libs()
+    # test_single_word()
     # test_several_words()
     # test_tags_awl()
     # test_reliability()

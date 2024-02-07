@@ -16,12 +16,12 @@ def test_fetch():
     pprint(len(result))
     
 def test_senses():
-    keyword = 'contract'
-    keyword = 'policy'
-    res = get_senses_of_keyword(keyword)
+    w = 'contract'
+    w = 'policy'
+    res = get_senses_of_keyword(w)
     pprint(res)
-    senses = res.get('NN', [])
-    print("\n".join(senses))
+    # senses = res.get('NN', [])
+    # print("\n".join(senses))
     
 
 def test_remove_tag():
@@ -33,10 +33,16 @@ def test_remove_tag():
 
 
 def test_spelling():
-    word = 'analyse'
+    w = 'analyse'
+    w = 'labour'
+    w = 'labor'
+    w = 'conceptualisation'
+    w = 'researcher'
+    w = 'disestablishment'
+    
     # json_data = try_load_from_json(word)
     # res = get_senses_of_keyword(word)
-    res = get_pos_list_of_keyword(word)
+    res = get_pos_list_of_keyword(w)
     # res = _try_get_american_spelling(word)
     print(res)
 
