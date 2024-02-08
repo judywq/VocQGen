@@ -65,6 +65,7 @@ def get_inflections(headword):
     pos_list = get_pos_list_of_keyword(headword)
     if not pos_list:
         logging.warning(f"Cannot find POS for word: <{headword}>, please check the word is fetched from the dictionary.")
+        pos_list = []
     
     # 2. Filter out unimportant POS tags using GPT
     bot = MyBotWrapper(parser=PosRankParser(), temperature=0)
@@ -145,10 +146,10 @@ def filter_inflections_by_pos(tag_to_words: dict, pos_list: list[str]):
 
 def get_correct_inflections(tag_to_words: dict):
     """Corret the inflections of a word based on the following rules:
-        1. word (NN), words (NNS) [OK, do nothing]
-        2. finance (NNS) -> finance (NN)
-        3. structure (NN), structure (NNS) -> structure (NN)
-        4. method (NN), method (NNS), methods(NNS) -> method (NN), methods(NNS)
+        1. word (NN), words (NNS)  # OK, do nothing
+        2. finance (NNS) -> finance (NN)  # Plural (NNS) only, replace it with NN
+        3. structure (NN), structure (NNS) -> structure (NN)  # NN and NNS with same form, keep NN only
+        4. method (NN), method (NNS), methods(NNS) -> method (NN), methods(NNS)  # Multiple NNS, remove NN-form NNS
 
     Args:
         tag_to_words (dict): a mapping from tag to a set of words
