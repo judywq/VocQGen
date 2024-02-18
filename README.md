@@ -1,3 +1,7 @@
+# VocQGen
+
+VocQGen is a tool for generating multiple choice cloze tests using LLM models.
+
 ## Get started
 
 Set `OPENAI_API_KEY` environment variable.
