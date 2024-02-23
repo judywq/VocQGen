@@ -150,65 +150,92 @@ class SentGenParser(ParserBase):
         super().compose_prompt(inputs=inputs)
         word = inputs.get('word')
         tag = inputs.get('tag', 'any')
-        sense = inputs.get('sense', None)
+        # sense = inputs.get('sense', None)
         country = inputs.get('country', 'Japanese')
         domain = inputs.get('domain', 'General Academic')
         scope = inputs.get('scope', 'a wide range of general topics your students may know that does not require domain-specific English knowledge')
         level_start = inputs.get('level_start', 'A2')
         level_end = inputs.get('level_end', 'lower B2')
         
-        if sense:
-            sense_part = f'with the meaning of "{sense}"'
-        else:
-            sense_part = ''
+        # if sense:
+        #     sense_part = f'with the meaning of "{sense}"'
+        # else:
+        #     sense_part = ''
+        #  "with the definition: {sense_part}"
         
-        prompt = f'''You are an English teacher at a {country} university and you are creating exemplary sentences to show your students\
+        prompt = f'''You are an English teacher at a {country} university and you are creating exemplary sentences to show your students \
 the use of specific English words in the domain of English for {domain} Purposes.
 The English proficiency of your students ranges from {level_start} to {level_end} based on CEFR. They are second language learners in Japan.
-Now please create a sentence that meets the following criteria:
-The sentence should show the use of the word "{word}" tagged as "{tag}".
+Now please create a sentence for the word "{word}" tagged as "{tag}". 
+The sentence should meet the following criteria:
+
+The sentence should be contextualized in {scope}.
+The sentence should show a frequent N-gram (N<=3) collocation of the word "{word}" tagged as "{tag}" with the specified definition.
 The word "{word}" should be pivotal to the meaning of the sentence and carries significant weight in the context. 
-The sentence should show a common usage of the word "{word}" tagged as "{tag}" {sense_part}. 
-The sentence may be contextualized in {scope}.
 The sentence should be understandable to the target students, with no words beyond their proficiency levels.
 The length of the sentence should be between 15-20 words.
 Ensure "{word}" does not appear at the beginning or the end of the sentence, nor is it repeated elsewhere in the sentence.
 Ensure none of the derivatives of "{word}" are present in the sentence.
 Please avoid starting the sentence with the definite article "the" as much as possible.
+Return the sentence and the collocation in the JSON format as follows:
+{{
+  "sentence": "generated sentence",
+  "collocation": "collocation of the word"
+}}
 
-Example: If the provided word is "account", tagged as "NN", an appropriate sentence can be:
-In managing finances, maintaining a bank account is essential for every student.'''
+Example: If the provided word is "account", tagged as "NN", with the definition: 
+"a record of debit and credit entries to cover transactions involving a particular item or a particular person or concern".
+an appropriate response can be:
+{{
+  "sentence": "In managing finances, maintaining a bank account is essential for every student.",
+  "collocation": "bank account"
+}}
+'''
         return prompt
 
     def parse_response(self, prompt, response):
         res = super().parse_response(prompt=prompt, response=response)
+        
+        
         response = self.remove_surrounding_quotes(response)
-        word = self.inputs.get('word')
-        pat = re.compile(r'\b' + word + r'\b', re.IGNORECASE)
-        if not pat.search(response):
-            logger.warning(f"Keyword '{word}' not found in response: {response}")
-            return {
-                **res,
-                "success": False,
-            }
+        try:
+            obj = json.loads(response)
+            sentence = obj.get('sentence', '')
+            collocation = obj.get('collocation', '')
+            word = self.inputs.get('word')
+            pat = re.compile(r'\b' + word + r'\b', re.IGNORECASE)
+            if not pat.search(sentence):
+                logger.warning(f"Keyword '{word}' not found in sentence: {sentence}")
+                return {
+                    **res,
+                    "success": False,
+                }
 
-        if response.startswith(word):
-            logger.warning(f"Keyword '{word}' found at the beginning of the sentence: {response}")
+            if sentence.startswith(word):
+                logger.warning(f"Keyword '{word}' found at the beginning of the sentence: {sentence}")
+                return {
+                    **res,
+                    "success": False,
+                }
+            
+            # Replace the keyword with a blank
+            clozed_sentence = cloze_sentence(sentence, word)
+            
+            # Replace "a" or "an" with "a/an" before the blank
+            clozed_sentence = replace_article(clozed_sentence)
+            
+            return {
+                **res,
+                "result": {
+                    "sentence": clozed_sentence,
+                    "collocation": collocation,
+                           },
+            }
+        except json.decoder.JSONDecodeError as e:
             return {
                 **res,
                 "success": False,
             }
-        
-        # Replace the keyword with a blank
-        result = cloze_sentence(response, word)
-        
-        # Replace "a" or "an" with "a/an" before the blank
-        result = replace_article(result)
-        
-        return {
-            **res,
-            "result": result,
-        }
     
     def get_sample_response(self, prompt):
         return {

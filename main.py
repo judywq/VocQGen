@@ -63,7 +63,7 @@ def main():
     log_columns = ['Date', 'Task', 'Keyword', 'Tag', 'Prompt', 'Raw Response', 'Parsed Result', 'Success']
     log_data = []
     
-    columns = ['Headword', 'POS', 'Sentence', 'Correct Answer', *[f'Distractor {i}' for i in range(1, setting.DISTRACTOR_COUNT+1)]]
+    columns = ['Headword', 'POS', 'Collocation', 'Sentence', 'Correct Answer', *[f'Distractor {i}' for i in range(1, setting.DISTRACTOR_COUNT+1)]]
     data = []
     failure_columns = ['word']
     failure_list = []
@@ -78,30 +78,33 @@ def main():
             keyword = word.surface
             keyword_tag = word.tag
             headword = word_family.headword
-            senses = select_senses(headword, keyword_tag)
-            if not senses:
-                logger.error(f"No senses found for '{repr(word)}'")
-                failure_list.append(word)
-                continue
+            sense = ""
             
-            r = bot_sense_rank.run(inputs={"keyword": keyword, "tag": keyword_tag, "senses": senses, "student_type": setting.STUDENT_TYPE})
-            suc = r.get('success')
-            log_data.append([get_date_str(), bot_sense_rank.task_name, keyword, keyword_tag, r.get('prompt'), r.get('raw_response'), r.get('result'), suc])
-            if not suc:
-                logger.error(f"Failed to rank senses for '{repr(word)}'")
-                failure_list.append(word)
-                continue
+            # senses = select_senses(headword, keyword_tag)
+            # if not senses:
+            #     logger.error(f"No senses found for '{repr(word)}'")
+            #     failure_list.append(word)
+            #     continue
             
-            top_senses = r.get('result')
-            if len(top_senses) > 0:
-                sense = top_senses[0]
-            else:
-                logger.error(f"Ranked senses is empty, use original sense. Word: '{repr(word)}'")
-                sense = senses[0]
+            # r = bot_sense_rank.run(inputs={"keyword": keyword, "tag": keyword_tag, "senses": senses, "student_type": setting.STUDENT_TYPE})
+            # suc = r.get('success')
+            # log_data.append([get_date_str(), bot_sense_rank.task_name, keyword, keyword_tag, r.get('prompt'), r.get('raw_response'), r.get('result'), suc])
+            # if not suc:
+            #     logger.error(f"Failed to rank senses for '{repr(word)}'")
+            #     failure_list.append(word)
+            #     continue
+            
+            # top_senses = r.get('result')
+            # if len(top_senses) > 0:
+            #     sense = top_senses[0]
+            # else:
+            #     logger.error(f"Ranked senses is empty, use original sense. Word: '{repr(word)}'")
+            #     sense = senses[0]
                 
             # sense = select_sense(headword, keyword_tag)
             
             clozed_sentence = None
+            collocation = None
             for trial in range(setting.RETRY_COUNT_FOR_SINGLE_WORD):
                 # print(f"{repr(w)}: {candidates}")
                 r = bot_sent_gen.run(inputs={"word": keyword, "tag": keyword_tag, "sense": sense, 
@@ -111,7 +114,9 @@ def main():
                 log_data.append([get_date_str(), bot_sent_gen.task_name, keyword, keyword_tag, r.get('prompt'), r.get('raw_response'), r.get('result'), suc])
                 
                 if suc:
-                    clozed_sentence = r.get('result')
+                    result = r.get('result')
+                    clozed_sentence = result.get('sentence')
+                    collocation = result.get('collocation')
                     sentence = fill_cloze(clozed_sentence, keyword)
 
                     suc = pos_check(inputs={"word": keyword, "tag": keyword_tag, "sentence": sentence})
@@ -137,7 +142,7 @@ def main():
                 if len(distractors) < setting.DISTRACTOR_COUNT:
                     logger.error(f"Failed to generate enough distractors for '{word}'")
                 else:
-                    data.append([headword, keyword_tag, clozed_sentence, keyword, *distractors])
+                    data.append([headword, keyword_tag, collocation, clozed_sentence, keyword, *distractors])
                     msg = "\n".join([f"{i+1}/{n_total}: " + "-" * 80,
                             f"Sentence: {clozed_sentence}",
                             f"Keyword: {keyword}",

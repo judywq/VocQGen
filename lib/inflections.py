@@ -102,6 +102,9 @@ def get_inflections(headword):
     # 7. Correct the inflections (especially NN, NNS)
     res = get_correct_inflections(res)
     
+    # and remove VBP
+    res = remove_VBP(res)
+    
     # 8. Keep only high frequency POS tags
     res = try_filter_high_freq_pos(headword, res)
     ngram_pos = list(res.keys())
@@ -185,6 +188,20 @@ def get_correct_inflections(tag_to_words: dict):
         tag_to_words['NNS'] -= tag_to_words['NN']
         if (len(tag_to_words['NNS']) == 0):
             del tag_to_words['NNS']
+    return tag_to_words
+
+
+def remove_VBP(tag_to_words: dict):
+    """Remove VBP from the inflections, since VB includes VBP usage
+
+    Args:
+        tag_to_words (dict): a mapping from tag to a set of words
+
+    Returns:
+        dict: filtered mapping from tag to a set of words
+    """
+    if 'VBP' in tag_to_words:
+        del tag_to_words['VBP']
     return tag_to_words
 
 
