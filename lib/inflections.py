@@ -5,6 +5,7 @@ from lib.dict_helper import get_pos_list_of_keyword, translate_fl_to_pos
 from lib.utils import get_general_pos
 from lib.parser import PosRankParser
 from lib.chat import MyBotWrapper
+from lib.ngram import filter_high_freq_inflections, filter_high_freq_pos
 
 import logging
 logger = logging.getLogger(__name__)
@@ -98,7 +99,17 @@ def get_inflections(headword):
             if inter:
                 res[key] = inter
 
+    # 7. Correct the inflections (especially NN, NNS)
     res = get_correct_inflections(res)
+    
+    # 8. Keep only high frequency POS tags
+    res = try_filter_high_freq_pos(headword, res)
+    ngram_pos = list(res.keys())
+    
+    before_noun_ngram_pos = set(res.keys())
+    # 9. Keep only high frequency NN, NNS
+    res = try_filter_high_freq_noun(res)
+    noun_removed = list(before_noun_ngram_pos - set(res.keys()))
 
     full_log = []
     if len(total_keys) <= 0:
@@ -110,6 +121,8 @@ def get_inflections(headword):
                          "unimorph": '-',
                          "dict_pos": ",".join(pos_list),
                          "gpt_pos": ",".join(top_pos_list),
+                         "ngram_pos": ",".join(ngram_pos),
+                         "noun_removed": ",".join(noun_removed),
                          "final": '-',
                          })
     for tag in total_keys:
@@ -124,6 +137,8 @@ def get_inflections(headword):
                          "unimorph": w in tag_to_words_unimorph.get(tag, set()),
                          "dict_pos": ",".join(pos_list),
                          "gpt_pos": ",".join(top_pos_list),
+                         "ngram_pos": ",".join(ngram_pos),
+                         "noun_removed": ",".join(noun_removed),
                          "final": w in res.get(tag, set()),
                          })
     return res, full_log
@@ -172,6 +187,57 @@ def get_correct_inflections(tag_to_words: dict):
             del tag_to_words['NNS']
     return tag_to_words
 
+
+def try_filter_high_freq_pos(headword, tag_to_words: dict):
+    """Filter the inflections by general POS tags
+
+    Args:
+        headword (str): the headword of the word family
+        tag_to_words (dict): a mapping from tag to a set of words
+
+    Returns:
+        dict: filtered mapping from tag to a set of words
+    """
+    pos_list = list(tag_to_words.keys())
+    if len(pos_list) <= 1:
+        # No need to filter if there is only one POS tag
+        return tag_to_words
+    
+    filtered_pos_list = filter_high_freq_pos(headword=headword, pos_list=pos_list)
+    result = {}
+    for tag, words in tag_to_words.items():
+        general_tag = get_general_pos(tag)
+        if general_tag in filtered_pos_list:
+            result[tag] = words
+    return result
+
+
+def try_filter_high_freq_noun(tag_to_words: dict):
+    """Filter the NN, NNS inflections of a word family by high frequency POS tags, keep only high frequency POS tags
+
+    Args:
+        tag_to_words (dict): a mapping from tag to a set of words
+
+    Returns:
+        dict: filtered mapping from tag to a set of words
+    """
+    noun_tag_to_words = {}
+    other_tag_to_words = {}
+    for tag, words in tag_to_words.items():
+        general_tag = get_general_pos(tag)
+        if general_tag == 'NN':
+            noun_tag_to_words[tag] = words
+        else:
+            other_tag_to_words[tag] = words
+    
+    if len(noun_tag_to_words) <= 1:
+        # No need to filter if there is only one noun tag
+        return tag_to_words
+    
+    result = filter_high_freq_inflections(noun_tag_to_words, th=0.1)
+    # result = {**result, **other_tag_to_words}
+    result.update(other_tag_to_words)
+    return result
 
 def get_inflections_lemm(word):
     res = getAllInflections(word)

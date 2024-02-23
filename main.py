@@ -63,7 +63,7 @@ def main():
     log_columns = ['Date', 'Task', 'Keyword', 'Tag', 'Prompt', 'Raw Response', 'Parsed Result', 'Success']
     log_data = []
     
-    columns = ['Sentence', 'Correct Answer', *[f'Distractor {i}' for i in range(1, setting.DISTRACTOR_COUNT+1)]]
+    columns = ['Headword', 'POS', 'Sentence', 'Correct Answer', *[f'Distractor {i}' for i in range(1, setting.DISTRACTOR_COUNT+1)]]
     data = []
     failure_columns = ['word']
     failure_list = []
@@ -128,13 +128,16 @@ def main():
                 logger.error(f"Failed to generate sentence for '{repr(word)}'")
                 failure_list.append(word)
             else:
-                # Successfully generated a sentence, now generate distractors
-                distractors = fill_distractors(bot_rational, word_cluster, word, clozed_sentence,n_distractors=setting.TEST_DISTRACTOR_COUNT, log_data=log_data)
+                if setting.NEED_DISTRACTOR:
+                    # Successfully generated a sentence, now generate distractors
+                    distractors = fill_distractors(bot_rational, word_cluster, word, clozed_sentence,n_distractors=setting.TEST_DISTRACTOR_COUNT, log_data=log_data)
+                else:
+                    distractors = [''] * setting.DISTRACTOR_COUNT
                 
                 if len(distractors) < setting.DISTRACTOR_COUNT:
                     logger.error(f"Failed to generate enough distractors for '{word}'")
                 else:
-                    data.append([clozed_sentence, keyword, *distractors])
+                    data.append([headword, keyword_tag, clozed_sentence, keyword, *distractors])
                     msg = "\n".join([f"{i+1}/{n_total}: " + "-" * 80,
                             f"Sentence: {clozed_sentence}",
                             f"Keyword: {keyword}",
@@ -145,7 +148,7 @@ def main():
                     df_log = pd.DataFrame(log_data, columns=log_columns)
                     write_data(df_log, fn_log)
                     count_per_family += 1
-                    if count_per_family >= setting.WORD_PER_FAMILY:
+                    if setting.WORD_PER_FAMILY is not None and count_per_family >= setting.WORD_PER_FAMILY:
                         # Successfully generated enough number of words for this word family,
                         #  break the word loop, goto next word family
                         break

@@ -10,7 +10,7 @@ sys.path.append(directory)
 # import lib.io
 from lib.io import read_data
 from lib.word_cluster import WordCluster
-from lib.inflections import get_inflections, get_inflections_lemm, get_inflections_unimorph
+from lib.inflections import try_filter_high_freq_pos, try_filter_high_freq_noun, get_inflections, get_inflections_lemm, get_inflections_unimorph
 # from pyinflect import getAllInflections, getInflection
 # from lemminflect import getAllInflections, getInflection
 from pprint import pprint
@@ -29,6 +29,7 @@ def test1():
 def test_libs():
     w = 'happily'
     w = 'greatly'
+    w = 'police'
     
     lemm = get_inflections_lemm(w)
     print('---- lemm')
@@ -62,11 +63,37 @@ def test_single_word():
     # w = 'functional'
     # w = 'redistribution'
     # w = 'reinterpretation'
+    w = 'police'
+    w = 'fish'
     tag_to_words, log = get_inflections(w)
     print(",".join(tag_to_words.keys()))
     df = pd.DataFrame(log)
     print(df)
 
+
+def test_filter_inflections_by_pos():
+    headword = 'account'
+    tag_to_words = {
+        'NN': {'account'},
+        'NNS': {'accounts'},
+        'VB': {'account'},
+        'VBP': {'account'},
+        'VBZ': {'accounts'},
+        'JJ': {'account'},
+    }
+    res = try_filter_high_freq_pos(headword, tag_to_words)
+    print(res)
+
+def test_filter_inflections_by_noun_pos():
+    tag_to_words = {
+        'NN': {'fish'},
+        'NNS': {'fishes'},
+        'VB': {'fish'},
+        'VBP': {'fish'},
+        'VBZ': {'fishes'},
+    }
+    res = try_filter_high_freq_noun(tag_to_words)
+    print(res)
 
 def test_several_words():
     words = [
@@ -129,8 +156,10 @@ def test_reliability():
 
 if __name__ == '__main__':
     # test1()
-    test_libs()
+    # test_libs()
     # test_single_word()
+    test_filter_inflections_by_pos()
+    # test_filter_inflections_by_noun_pos()
     # test_several_words()
     # test_tags_awl()
     # test_reliability()

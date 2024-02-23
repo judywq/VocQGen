@@ -19,6 +19,7 @@ REQUEST_TIMEOUT_SECS = 60
 SUBLIST = 1
 # Number of words to generate for each word family
 WORD_PER_FAMILY = 1
+WORD_PER_FAMILY = None
 DOMAIN = 'General Academic'
 LEVEL_START = 'A2'
 LEVEL_END = 'lower B2'
@@ -34,6 +35,8 @@ KEYWORD_START_POS = 1
 KEYWORD_COUNT = -1
 # KEYWORD_COUNT = 5
 
+NEED_DISTRACTOR = True
+# NEED_DISTRACTOR = False
 TEST_DISTRACTOR_COUNT = 10 # The number of distractors to ask ChatGPT to test rationality in one trial
 DISTRACTOR_COUNT = 3 # The number of distractors to output to result
 

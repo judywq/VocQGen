@@ -152,6 +152,8 @@ def load_parsed_keyword(keyword):
 
 def get_pos_list_of_keyword(keyword):
     result_list = load_parsed_keyword(keyword)
+    if result_list is None:
+        return None
     pos_list = [translate_fl_to_pos(entry.get('fl')) for entry in result_list]
     return pos_list
 
